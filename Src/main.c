@@ -23,7 +23,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "device.h"
+#include <admin.h>
+#include <ccid.h>
+#include <ctap.h>
+#include <device.h>
+#include <oath.h>
+#include <openpgp.h>
+#include <piv.h>
+#include "lfs_init.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
