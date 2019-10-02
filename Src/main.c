@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "device.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,6 +105,15 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
+  DBG_MSG("Init FS\n");
+  littlefs_init();
+  DBG_MSG("Init applets");
+  openpgp_install(0);
+  piv_install(0);
+  oath_install(0);
+  ctap_install(0);
+  admin_install();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,7 +121,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    device_loop();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
