@@ -24,7 +24,6 @@
 #include "stm32l4xx_hal.h"
 #include "usbd_def.h"
 #include "usbd_core.h"
-#include "usbd_customhid.h"
 
 /* USER CODE BEGIN Includes */
 

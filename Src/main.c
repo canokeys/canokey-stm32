@@ -46,7 +46,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define MX_USB_DEVICE_Init usb_device_init
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -128,6 +128,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    device_loop();
   }
   /* USER CODE END 3 */
 }
