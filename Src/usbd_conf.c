@@ -26,7 +26,8 @@
 #include "usbd_core.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "usbd_ccid.h"
+#include "usbd_ctaphid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -308,7 +309,6 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   HAL_PWREx_EnableVddUSB();
   /* Link the driver to the stack. */
   hpcd_USB_FS.pData = pdev;
-  pdev->pData = &hpcd_USB_FS;
 
   hpcd_USB_FS.Instance = USB;
   hpcd_USB_FS.Init.dev_endpoints = 8;
@@ -339,12 +339,26 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   HAL_PCD_RegisterIsoInIncpltCallback(&hpcd_USB_FS, PCD_ISOINIncompleteCallback);
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
   /* USER CODE BEGIN EndPoint_Configuration */
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x00 , PCD_SNG_BUF, 0x18);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x80 , PCD_SNG_BUF, 0x58);
+#define SIZE_OF_BTABLE(nEndpoints) ((nEndpoints)<<3)
+  uint32_t PMA_addr = SIZE_OF_BTABLE(4);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , 0x00 , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += 0x40;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , 0x80 , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += 0x40;
   /* USER CODE END EndPoint_Configuration */
   /* USER CODE BEGIN EndPoint_Configuration_CUSTOM_HID */
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , CUSTOM_HID_EPIN_ADDR , PCD_SNG_BUF, 0x98);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , CUSTOM_HID_EPOUT_ADDR , PCD_SNG_BUF, 0xD8);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CCID_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += CCID_EPIN_SIZE;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CCID_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += CCID_EPOUT_SIZE;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , OPENPGP_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += OPENPGP_EPIN_SIZE;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , OPENPGP_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += OPENPGP_EPOUT_SIZE;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CTAPHID_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += CTAPHID_EPIN_SIZE;
+  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CTAPHID_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
+  PMA_addr += CTAPHID_EPOUT_SIZE;
   /* USER CODE END EndPoint_Configuration_CUSTOM_HID */
   return USBD_OK;
 }
@@ -359,7 +373,7 @@ USBD_StatusTypeDef USBD_LL_DeInit(USBD_HandleTypeDef *pdev)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
 
-  hal_status = HAL_PCD_DeInit(pdev->pData);
+  hal_status = HAL_PCD_DeInit(&hpcd_USB_FS);
 
   switch (hal_status) {
     case HAL_OK :
@@ -391,7 +405,7 @@ USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef *pdev)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
  
-  hal_status = HAL_PCD_Start(pdev->pData);
+  hal_status = HAL_PCD_Start(&hpcd_USB_FS);
      
   switch (hal_status) {
     case HAL_OK :
@@ -423,7 +437,7 @@ USBD_StatusTypeDef USBD_LL_Stop(USBD_HandleTypeDef *pdev)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
 
-  hal_status = HAL_PCD_Stop(pdev->pData);
+  hal_status = HAL_PCD_Stop(&hpcd_USB_FS);
 
   switch (hal_status) {
     case HAL_OK :
@@ -458,7 +472,7 @@ USBD_StatusTypeDef USBD_LL_OpenEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr, uin
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
 
-  hal_status = HAL_PCD_EP_Open(pdev->pData, ep_addr, ep_mps, ep_type);
+  hal_status = HAL_PCD_EP_Open(&hpcd_USB_FS, ep_addr, ep_mps, ep_type);
 
   switch (hal_status) {
     case HAL_OK :
@@ -491,7 +505,7 @@ USBD_StatusTypeDef USBD_LL_CloseEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
   
-  hal_status = HAL_PCD_EP_Close(pdev->pData, ep_addr);
+  hal_status = HAL_PCD_EP_Close(&hpcd_USB_FS, ep_addr);
       
   switch (hal_status) {
     case HAL_OK :
@@ -524,7 +538,7 @@ USBD_StatusTypeDef USBD_LL_FlushEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
   
-  hal_status = HAL_PCD_EP_Flush(pdev->pData, ep_addr);
+  hal_status = HAL_PCD_EP_Flush(&hpcd_USB_FS, ep_addr);
       
   switch (hal_status) {
     case HAL_OK :
@@ -557,7 +571,7 @@ USBD_StatusTypeDef USBD_LL_StallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
   
-  hal_status = HAL_PCD_EP_SetStall(pdev->pData, ep_addr);
+  hal_status = HAL_PCD_EP_SetStall(&hpcd_USB_FS, ep_addr);
 
   switch (hal_status) {
     case HAL_OK :
@@ -590,7 +604,7 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_add
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
   
-  hal_status = HAL_PCD_EP_ClrStall(pdev->pData, ep_addr);  
+  hal_status = HAL_PCD_EP_ClrStall(&hpcd_USB_FS, ep_addr);  
      
   switch (hal_status) {
     case HAL_OK :
@@ -620,7 +634,7 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_add
   */
 uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
-  PCD_HandleTypeDef *hpcd = (PCD_HandleTypeDef*) pdev->pData;
+  PCD_HandleTypeDef *hpcd = &hpcd_USB_FS;
   
   if((ep_addr & 0x80) == 0x80)
   {
@@ -643,7 +657,7 @@ USBD_StatusTypeDef USBD_LL_SetUSBAddress(USBD_HandleTypeDef *pdev, uint8_t dev_a
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
   
-  hal_status = HAL_PCD_SetAddress(pdev->pData, dev_addr);
+  hal_status = HAL_PCD_SetAddress(&hpcd_USB_FS, dev_addr);
      
   switch (hal_status) {
     case HAL_OK :
@@ -673,12 +687,12 @@ USBD_StatusTypeDef USBD_LL_SetUSBAddress(USBD_HandleTypeDef *pdev, uint8_t dev_a
   * @param  size: Data size    
   * @retval USBD status
   */
-USBD_StatusTypeDef USBD_LL_Transmit(USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint16_t size)
+USBD_StatusTypeDef USBD_LL_Transmit(USBD_HandleTypeDef *pdev, uint8_t ep_addr, const uint8_t *pbuf, uint16_t size)
 {
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
 
-  hal_status = HAL_PCD_EP_Transmit(pdev->pData, ep_addr, pbuf, size);
+  hal_status = HAL_PCD_EP_Transmit(&hpcd_USB_FS, ep_addr, pbuf, size);
      
   switch (hal_status) {
     case HAL_OK :
@@ -713,7 +727,7 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive(USBD_HandleTypeDef *pdev, uint8_t ep_a
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
 
-  hal_status = HAL_PCD_EP_Receive(pdev->pData, ep_addr, pbuf, size);
+  hal_status = HAL_PCD_EP_Receive(&hpcd_USB_FS, ep_addr, pbuf, size);
      
   switch (hal_status) {
     case HAL_OK :
@@ -743,7 +757,7 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive(USBD_HandleTypeDef *pdev, uint8_t ep_a
   */
 uint32_t USBD_LL_GetRxDataSize(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
-  return HAL_PCD_EP_GetRxCount((PCD_HandleTypeDef*) pdev->pData, ep_addr);
+  return HAL_PCD_EP_GetRxCount(&hpcd_USB_FS, ep_addr);
 }
 
 /**
@@ -756,26 +770,6 @@ void USBD_LL_Delay(uint32_t Delay)
   HAL_Delay(Delay);
 }
 
-/**
-  * @brief  Static single allocation.
-  * @param  size: Size of allocated memory
-  * @retval None
-  */
-void *USBD_static_malloc(uint32_t size)
-{
-  static uint32_t mem[(sizeof(USBD_CUSTOM_HID_HandleTypeDef)/4+1)];/* On 32-bit boundary */
-  return mem;
-}
-
-/**
-  * @brief  Dummy memory free
-  * @param  p: Pointer to allocated  memory address
-  * @retval None
-  */
-void USBD_static_free(void *p)
-{
-
-}
 
 /* USER CODE BEGIN 5 */
 /**
