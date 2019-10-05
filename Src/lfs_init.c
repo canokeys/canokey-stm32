@@ -17,11 +17,12 @@ static struct lfs_config config;
 static uint8_t read_buffer[CACHE_SIZE];
 static uint8_t prog_buffer[CACHE_SIZE];
 static alignas(4) uint8_t lookahead_buffer[LOOKAHEAD_SIZE];
-extern uintptr_t _lfs_begin;
+extern uint8_t _lfs_begin;
 
 int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
                void *buffer, lfs_size_t size) {
   UNUSED(c);
+  // DBG_MSG("blk %d @ %p len %u buf %p\r\n", block, (void*)FLASH_ADDR(block, off), size, buffer);
   memcpy(buffer, (const void *)FLASH_ADDR(block, off), size);
   return 0;
 }
