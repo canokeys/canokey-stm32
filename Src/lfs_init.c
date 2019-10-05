@@ -8,15 +8,16 @@
 #define CACHE_SIZE       128
 #define WRITE_SIZE       8
 #define READ_SIZE        1
-#define FS_BASE          _lfs_begin
+#define FS_BASE          (&_lfs_begin)
 #define FS_BANK          FLASH_BANK_1
 #define FLASH_ADDR(b, o) (FS_BASE + (b)*FLASH_PAGE_SIZE + (o))
+#define FLASH_ADDR2BLOCK(a) (((a) & ~0x8000000u) / FLASH_PAGE_SIZE)
 
 static struct lfs_config config;
 static uint8_t read_buffer[CACHE_SIZE];
 static uint8_t prog_buffer[CACHE_SIZE];
 static alignas(4) uint8_t lookahead_buffer[LOOKAHEAD_SIZE];
-extern void * _lfs_begin;
+extern uintptr_t _lfs_begin;
 
 int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
                void *buffer, lfs_size_t size) {
@@ -50,7 +51,7 @@ int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
   uint32_t paddr = (uint32_t) FLASH_ADDR(block, off);
   int ret;
 
-  // DBG_MSG("blk %d %p %u", block, (void*)paddr, size);
+  // DBG_MSG("blk %d @ %p len %u buf %p\r\n", block, (void*)paddr, size, buffer);
 
   HAL_FLASH_Unlock();
   ret = program_space(paddr, buffer, size);
@@ -64,6 +65,8 @@ int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
   // __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
   __HAL_FLASH_DATA_CACHE_ENABLE();
 
+  // DBG_MSG("verify %d\n", memcmp(buffer, (const void *)FLASH_ADDR(block, off), size));
+
   return ret;
 }
 
@@ -74,8 +77,9 @@ int block_erase(const struct lfs_config *c, lfs_block_t block) {
   FLASH_EraseInitTypeDef EraseInitStruct;
   EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
   EraseInitStruct.Banks = FS_BANK;
-  EraseInitStruct.Page = block;
+  EraseInitStruct.Page = block + FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   EraseInitStruct.NbPages = 1;
+  // DBG_MSG("block %d\r\n", EraseInitStruct.Page);
 
   HAL_FLASH_Unlock();
   
@@ -113,12 +117,13 @@ void littlefs_init() {
   config.read_size = READ_SIZE;
   config.prog_size = WRITE_SIZE;
   config.block_size = FLASH_PAGE_SIZE;
-  config.block_count = (FLASH_SIZE - (uintptr_t)FS_BASE)/FLASH_PAGE_SIZE;
+  config.block_count = FLASH_SIZE/FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   config.block_cycles = 100000;
   config.cache_size = CACHE_SIZE;
   config.lookahead_size = LOOKAHEAD_SIZE;
   config.read_buffer = read_buffer;
   config.prog_buffer = prog_buffer;
   config.lookahead_buffer = lookahead_buffer;
+  DBG_MSG("Flash base %p, %u blocks (%u bytes)\r\n", FS_BASE, config.block_count, FLASH_PAGE_SIZE);
   fs_init(&config);
 }
