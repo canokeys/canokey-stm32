@@ -8,7 +8,7 @@
 #define CACHE_SIZE       128
 #define WRITE_SIZE       8
 #define READ_SIZE        1
-#define FS_BASE          0x08020000
+#define FS_BASE          _lfs_begin
 #define FS_BANK          FLASH_BANK_1
 #define FLASH_ADDR(b, o) (FS_BASE + (b)*FLASH_PAGE_SIZE + (o))
 
@@ -16,6 +16,7 @@ static struct lfs_config config;
 static uint8_t read_buffer[CACHE_SIZE];
 static uint8_t prog_buffer[CACHE_SIZE];
 static alignas(4) uint8_t lookahead_buffer[LOOKAHEAD_SIZE];
+extern void * _lfs_begin;
 
 int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
                void *buffer, lfs_size_t size) {
@@ -46,7 +47,7 @@ int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
   if(size % WRITE_SIZE != 0 || off % WRITE_SIZE != 0)
       return LFS_ERR_INVAL;
 
-  uint32_t paddr = FLASH_ADDR(block, off);
+  uint32_t paddr = (uint32_t) FLASH_ADDR(block, off);
   int ret;
 
   // DBG_MSG("blk %d %p %u", block, (void*)paddr, size);
@@ -112,7 +113,7 @@ void littlefs_init() {
   config.read_size = READ_SIZE;
   config.prog_size = WRITE_SIZE;
   config.block_size = FLASH_PAGE_SIZE;
-  config.block_count = 256;    // 128 KiB
+  config.block_count = (FLASH_SIZE - (uintptr_t)FS_BASE)/FLASH_PAGE_SIZE;
   config.block_cycles = 100000;
   config.cache_size = CACHE_SIZE;
   config.lookahead_size = LOOKAHEAD_SIZE;

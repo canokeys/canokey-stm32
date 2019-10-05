@@ -62,7 +62,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 160K
+LFS (rx)      : ORIGIN = 0x8028000, LENGTH = 96K
 }
 
 /* Define output sections */
@@ -187,7 +188,10 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+  ._file_system_begin :
+  {
+    _lfs_begin = .;
+  } >LFS
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
