@@ -16,11 +16,16 @@
                 "${workspaceFolder}/Drivers/CMSIS/Include",
                 "${workspaceFolder}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
             ],
-            "defines": ["USE_FULL_LL_DRIVER","USE_HAL_DRIVER","STM32L432xx"],
+            "defines": [
+                "USE_FULL_LL_DRIVER",
+                "USE_HAL_DRIVER",
+                "STM32L432xx"
+            ],
             "compilerPath": "/opt/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-gcc",
             "cStandard": "c11",
             "cppStandard": "c++14",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "clang-x64",
+            "configurationProvider": "vector-of-bool.cmake-tools"
         }
     ],
     "version": 4
