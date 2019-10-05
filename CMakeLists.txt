@@ -3,6 +3,7 @@ project(canokey C ASM)
 set(CMAKE_C_STANDARD 11)
 # set(CMAKE_BUILD_TYPE Release CACHE STRING "select release build")
 # set(ENABLE_TESTING OFF CACHE BOOL "disable tests")
+option(ENABLE_DEBUG_OUTPUT "Print debug messages" ON)
 
 aux_source_directory(Src SOURCE_CODE_COMMON)
 
@@ -24,6 +25,9 @@ add_executable(canokey ${SOURCE_CODE_COMMON} ${SOURCE_CODE_BOARD} ${STARTUP_ASM_
 target_link_libraries(canokey PRIVATE ${PRJ_EXTRA_LIB} c m nosys)
 
 target_compile_definitions(canokey PRIVATE USE_HAL_DRIVER USE_FULL_LL_DRIVER STM32L432xx)
+if (ENABLE_DEBUG_OUTPUT)
+    target_compile_definitions(canokey PRIVATE DEBUG_OUTPUT)
+endif (ENABLE_DEBUG_OUTPUT)
 
 target_include_directories(canokey PRIVATE Board/YutrikeyHeadless)
 target_include_directories(canokey PRIVATE Drivers/STM32L4xx_HAL_Driver/Inc)
@@ -49,3 +53,7 @@ add_custom_target(dfu
 add_custom_target(flash
     DEPENDS canokey.bin
     COMMAND st-flash --reset write canokey.bin 0x08000000)
+
+add_custom_target(cubeflash
+    DEPENDS canokey.bin
+    COMMAND STM32_Programmer_CLI -c port=SWD -w canokey.bin 0x08000000 -rst)

@@ -46,7 +46,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define MX_USB_DEVICE_Init usb_device_init
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -72,7 +71,7 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void MX_USB_DEVICE_Init(){}
 /* USER CODE END 0 */
 
 /**
@@ -112,12 +111,13 @@ int main(void)
 
   DBG_MSG("Init FS\n");
   littlefs_init();
-  DBG_MSG("Init applets");
+  DBG_MSG("Init applets\r\n");
   openpgp_install(0);
   piv_install(0);
   oath_install(0);
   ctap_install(0);
   admin_install();
+  usb_device_init();
 
   /* USER CODE END 2 */
 
