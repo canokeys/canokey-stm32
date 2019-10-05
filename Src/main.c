@@ -53,6 +53,8 @@ RNG_HandleTypeDef hrng;
 
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim6;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -65,6 +67,7 @@ static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -72,6 +75,17 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void MX_USB_DEVICE_Init(){}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if(htim == &htim6) {
+    static uint32_t testcnt = 0;
+    if((testcnt & 0x1ff) == 0) {
+      // DBG_MSG("touch %d\r\n",(testcnt >> 9) & 1);
+      set_touch_result((testcnt >> 9) & 1);
+    }
+    testcnt ++;
+  }
+}
 /* USER CODE END 0 */
 
 /**
