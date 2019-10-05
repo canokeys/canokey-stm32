@@ -64,6 +64,8 @@ void Error_Handler(void);
 #define FM_SSN_GPIO_Port GPIOA
 #define TOUCH_Pin GPIO_PIN_1
 #define TOUCH_GPIO_Port GPIOB
+#define LED_Pin GPIO_PIN_3
+#define LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
