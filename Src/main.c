@@ -79,6 +79,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if(htim == &htim6) {
     static uint32_t testcnt = 0;
+    if (testcnt % 150 == 0) CCID_TimeExtensionLoop();
     if((testcnt & 0x1ff) == 0) {
       // DBG_MSG("touch %d\r\n",(testcnt >> 9) & 1);
       set_touch_result((testcnt >> 9) & 1);
