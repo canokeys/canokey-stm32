@@ -24,6 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32l4xx_ll_gpio.h"
 #include <admin.h>
 #include <ccid.h>
 #include <ctap.h>
@@ -58,7 +59,7 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+static uint16_t touch_threshold;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,17 +76,56 @@ static void MX_TIM6_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void MX_USB_DEVICE_Init(){}
+
+void GPIO_Touch_Calibrate(void) {
+  uint32_t sum = 0;
+  for (int i = 0; i != 10; ++i) {
+    LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
+    LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
+
+    for (int j = 0; j < 100; ++j)
+      asm volatile("nop");
+    LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
+    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin))
+      ++sum;
+  }
+  touch_threshold = sum / 5;
+}
+
+GPIO_PinState GPIO_Touched(void) {
+  LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
+  LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
+  for (int i = 0; i < 100; ++i)
+    asm volatile("nop");
+  uint32_t counter = 0;
+  LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
+  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin))
+    ++counter;
+  return counter > touch_threshold ? GPIO_PIN_SET : GPIO_PIN_RESET;
+}
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if(htim == &htim6) {
-    static uint32_t testcnt = 0;
+    static uint32_t testcnt = 0, deassert_at = ~0u;
     if (testcnt % 150 == 0) CCID_TimeExtensionLoop();
-    if((testcnt & 0x1ff) == 0) {
-      // DBG_MSG("touch %d\r\n",(testcnt >> 9) & 1);
-      set_touch_result((testcnt >> 9) & 1);
+    if((testcnt % 8192) == 0) {
+      GPIO_Touch_Calibrate();
     }
-    testcnt ++;
+    if (GPIO_Touched()) {
+      set_touch_result(TOUCH_SHORT);
+      deassert_at = HAL_GetTick() + 150;
+    } else if (HAL_GetTick() > deassert_at) {
+      set_touch_result(TOUCH_NO);
+      deassert_at = ~0u;
+    }
+    testcnt++;
   }
+}
+// override the function defined in rand.c
+uint32_t random32(void) {
+  uint32_t v;
+  while (HAL_RNG_GenerateRandomNumber(&hrng, &v) != HAL_OK);
+  return v;
 }
 /* USER CODE END 0 */
 
