@@ -1,3 +1,3 @@
 [submodule "canokey-core"]
 	path = canokey-core
-	url = git@github.com:canopo/canokey-core.git
+	url = https://github.com/canopo/canokey-core.git
