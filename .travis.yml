@@ -4,15 +4,12 @@ language:
   - c++
 compiler:
   - gcc
-# addons:
-#   apt:
-#     update: true
-#     packages:
-#       - cmake
-#       - libcmocka-dev
-#       - python3-pip
-#       - python3-setuptools
-#       - python3-wheel
+addons:
+  apt:
+    update: true
+    packages:
+      - cmake
+      - libc6-i386
 install:
   - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
   - sudo tar -xf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2 -C /opt
