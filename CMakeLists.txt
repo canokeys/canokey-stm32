@@ -34,10 +34,9 @@ target_include_directories(canokey PRIVATE Inc)
 add_custom_command(TARGET canokey POST_BUILD
     COMMAND "${CROSS_COMPILE}size" canokey)
 
-add_custom_command(OUTPUT canokey.bin
-    COMMAND "${CROSS_COMPILE}objcopy" -O binary -S canokey canokey.bin
+add_custom_target(canokey.bin
     DEPENDS canokey
-)
+    COMMAND "${CROSS_COMPILE}objcopy" -O binary -S canokey canokey.bin)
 
 add_custom_target(dfu
     DEPENDS canokey.bin
