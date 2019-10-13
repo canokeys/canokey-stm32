@@ -1,20 +1,29 @@
 dist: bionic
 sudo: required
 language:
-  - c++
+- c++
 compiler:
-  - gcc
+- gcc
 addons:
   apt:
     update: true
     packages:
-      - cmake
-      - libc6-i386
+    - cmake
+    - libc6-i386
 install:
-  - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
-  - sudo tar -xf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2 -C /opt
-
+- wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
+- sudo tar -xf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2 -C /opt
 script:
-  - mkdir build && pushd build
-  - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake  -DCROSS_COMPILE=/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi- -DCMAKE_BUILD_TYPE=Release ..
-  - make -j2
+- mkdir build && pushd build
+- cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake  -DCROSS_COMPILE=/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-
+  -DCMAKE_BUILD_TYPE=Release ..
+- make -j2 canokey.bin
+deploy:
+  provider: releases
+  api_key:
+    secure: Zoj0xYjQ1d16A9uhH/RC+6NhVcXH4J8qpoT/+RB+jaA5DT2i0TIL830bVShyy3gxqo6I43NssT3d0Z7tPC8CvB0D6nHA38vE3SnkeKZPPzOaSKXcgSAxAdTF4BQg0Q4rVhcAJS0Ui14db8UhKLEKpKshe8ew1zbDRYRAyq0On8qEiFmeOTLxdQl5T1vHfmdZDmpP3a7dehNDDkMqXwlQansi/ofj8bkfsCGAYJokalbVgk+gwqAxLwA837/9VnXguHQPUdfI3eW7t1FUisMskh/wAOBVTlJ2gp7a6u/30CVUcq94RkpIbx/NYUwE1AtF2HeOqofX+9InhH6YdT8LfLgCH1WzgFgxQUgCpvVX/Rc4Ewu5zQ54IakufRUzNZteGA1oPVyjyzmW36gCyqk019Af39ln5Q9k4gJPo5HbqDI07WGbxiqlv3sz4OFr0EK/xELnnGyaUBEMwi7Y61OdWEtJqIGZTt2BterJZ5i0DuYZZR2UjnFREk3SLg8sko3i1ex9E+3oukTc39AC66ezinoik1tXntxJuWp4OwwmOQpE2hUiNxChhgHGDXrQ/FO4ijSDlOgdXU5ra1poVPAz1FYbkA/qs6hPrcacLxsHxTpCcZxpuTNeGKEGZIe6E3pfBQ4fxZCX+jgigqghJQNXcYxzpkLaVkKopK26djUtvBU=
+  file: build/canokey.bin
+  skip_cleanup: true
+  on:
+    repo: canopo/canokey-stm32
+    tags: true
