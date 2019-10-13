@@ -18,6 +18,7 @@ script:
 - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake  -DCROSS_COMPILE=/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-
   -DCMAKE_BUILD_TYPE=Release ..
 - make -j2 canokey.bin
+- popd
 deploy:
   provider: releases
   api_key:
