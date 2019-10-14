@@ -86,8 +86,10 @@ void GPIO_Touch_Calibrate(void) {
     for (int j = 0; j < 100; ++j)
       asm volatile("nop");
     LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
-    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin))
+    __disable_irq();
+    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && sum < 1000)
       ++sum;
+    __enable_irq();
   }
   touch_threshold = sum / 5;
 }
@@ -99,17 +101,20 @@ GPIO_PinState GPIO_Touched(void) {
     asm volatile("nop");
   uint32_t counter = 0;
   LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
-  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin))
+  __disable_irq();
+  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && counter < 1000)
     ++counter;
+  __enable_irq();
   return counter > touch_threshold ? GPIO_PIN_SET : GPIO_PIN_RESET;
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if(htim == &htim6) {
     static uint32_t testcnt = 0, deassert_at = ~0u;
-    if (testcnt % 150 == 0) CCID_TimeExtensionLoop();
-    if((testcnt % 8192) == 0) {
-      GPIO_Touch_Calibrate();
+    if (testcnt % 150 == 0) {
+      // DBG_MSG("i PRI=%d MASK=%d\r\n",__get_BASEPRI(), __get_PRIMASK());
+      // DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
+      CCID_TimeExtensionLoop();
     }
     if (GPIO_Touched()) {
       set_touch_result(TOUCH_SHORT);
@@ -181,11 +186,18 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  for (uint32_t i = 0; ;i++)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if((i & ((1<<23)-1)) == 0) {
+      DBG_MSG("Touch calibrating...\r\n");
+      GPIO_Touch_Calibrate();
+      DBG_MSG("m PRI=%d MASK=%d\r\n",__get_BASEPRI(), __get_PRIMASK());
+      // DBG_MSG("ISER[2:1]=%#x:%#x\r\n", NVIC->ISER[2], NVIC->ISER[1]);
+      // DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
+    }
     device_loop();
   }
   /* USER CODE END 3 */
