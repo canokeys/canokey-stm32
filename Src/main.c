@@ -59,7 +59,9 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-static uint16_t touch_threshold;
+static uint16_t touch_threshold = 500;
+const uint32_t UNTOUCHED_MAX_VAL = 1000;
+const uint32_t CALI_TIMES = 4;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,7 +81,7 @@ void MX_USB_DEVICE_Init(){}
 
 void GPIO_Touch_Calibrate(void) {
   uint32_t sum = 0;
-  for (int i = 0; i != 10; ++i) {
+  for (int i = 0; i < CALI_TIMES; ++i) {
     LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
     LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
 
@@ -87,11 +89,18 @@ void GPIO_Touch_Calibrate(void) {
       asm volatile("nop");
     LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
     __disable_irq();
-    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && sum < 1000)
+    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && sum < UNTOUCHED_MAX_VAL * CALI_TIMES)
       ++sum;
     __enable_irq();
+    // DBG_MSG("val %u\n", sum);
   }
-  touch_threshold = sum / 5;
+  if (sum == UNTOUCHED_MAX_VAL * CALI_TIMES){
+    DBG_MSG("max limit exceeded, discard...\n");
+    return;
+  }
+
+  touch_threshold = sum / CALI_TIMES * 2;
+  DBG_MSG("touch_threshold %u\n", touch_threshold);
 }
 
 GPIO_PinState GPIO_Touched(void) {
@@ -102,7 +111,7 @@ GPIO_PinState GPIO_Touched(void) {
   uint32_t counter = 0;
   LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
   __disable_irq();
-  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && counter < 1000)
+  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && counter <= touch_threshold)
     ++counter;
   __enable_irq();
   return counter > touch_threshold ? GPIO_PIN_SET : GPIO_PIN_RESET;
@@ -194,9 +203,12 @@ int main(void)
     if((i & ((1<<23)-1)) == 0) {
       DBG_MSG("Touch calibrating...\r\n");
       GPIO_Touch_Calibrate();
-      DBG_MSG("m PRI=%d MASK=%d\r\n",__get_BASEPRI(), __get_PRIMASK());
-      // DBG_MSG("ISER[2:1]=%#x:%#x\r\n", NVIC->ISER[2], NVIC->ISER[1]);
-      // DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
+    }
+    if ((i & ((1 << 20) - 1)) == 0) {
+      DBG_MSG("n group %d prio %d\n", NVIC_GetPriorityGrouping(), NVIC_GetPriority(USB_IRQn));
+      DBG_MSG("m PRI=%d MASK=%d\r\n", __get_BASEPRI(), __get_PRIMASK());
+      DBG_MSG("ISER[2:1]=%#x:%#x\r\n", NVIC->ISER[2], NVIC->ISER[1]);
+      DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
     }
     device_loop();
   }
