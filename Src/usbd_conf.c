@@ -79,7 +79,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
 
     /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(USB_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(USB_IRQn);
+    // HAL_NVIC_EnableIRQ(USB_IRQn);
   /* USER CODE BEGIN USB_MspInit 1 */
 
   /* USER CODE END USB_MspInit 1 */
@@ -404,7 +404,9 @@ USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef *pdev)
 {
   HAL_StatusTypeDef hal_status = HAL_OK;
   USBD_StatusTypeDef usb_status = USBD_OK;
- 
+
+  HAL_NVIC_EnableIRQ(USB_IRQn);
+
   hal_status = HAL_PCD_Start(&hpcd_USB_FS);
      
   switch (hal_status) {
