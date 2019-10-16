@@ -121,8 +121,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if(htim == &htim6) {
     static uint32_t testcnt = 0, deassert_at = ~0u;
     if (testcnt % 150 == 0) {
-      // DBG_MSG("i PRI=%d MASK=%d\r\n",__get_BASEPRI(), __get_PRIMASK());
-      // DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
       CCID_TimeExtensionLoop();
     }
     if (GPIO_Touched()) {
@@ -203,12 +201,6 @@ int main(void)
     if((i & ((1<<23)-1)) == 0) {
       DBG_MSG("Touch calibrating...\r\n");
       GPIO_Touch_Calibrate();
-    }
-    if ((i & ((1 << 20) - 1)) == 0) {
-      DBG_MSG("n group %d prio %d\n", NVIC_GetPriorityGrouping(), NVIC_GetPriority(USB_IRQn));
-      DBG_MSG("m PRI=%d MASK=%d\r\n", __get_BASEPRI(), __get_PRIMASK());
-      DBG_MSG("ISER[2:1]=%#x:%#x\r\n", NVIC->ISER[2], NVIC->ISER[1]);
-      DBG_MSG("ISPR[2:1]=%#x:%#x\r\n", NVIC->ISPR[2], NVIC->ISPR[1]);
     }
     device_loop();
   }
