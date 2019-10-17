@@ -139,6 +139,78 @@ uint32_t random32(void) {
   while (HAL_RNG_GenerateRandomNumber(&hrng, &v) != HAL_OK);
   return v;
 }
+int SetupMPU(void) {
+  if (MPU->TYPE == 0) return -1;
+  int nRegion = MPU->TYPE >> 8 & 0xFF;
+  MPU_Region_InitTypeDef configs[] = {
+      {
+          .Enable = MPU_REGION_ENABLE,
+          .BaseAddress = SRAM1_BASE,
+          .Size = MPU_REGION_SIZE_64KB,
+          .SubRegionDisable = 0,
+          .TypeExtField = MPU_TEX_LEVEL0,
+          .AccessPermission = MPU_REGION_FULL_ACCESS,
+          .DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE,
+          .IsShareable = MPU_ACCESS_SHAREABLE,
+          .IsCacheable = MPU_ACCESS_CACHEABLE,
+          .IsBufferable = MPU_ACCESS_NOT_BUFFERABLE,
+      },
+      {
+          .Enable = MPU_REGION_ENABLE,
+          .BaseAddress = FLASH_BASE,
+          .Size = MPU_REGION_SIZE_256KB,
+          .SubRegionDisable = 0,
+          .TypeExtField = MPU_TEX_LEVEL0,
+          .AccessPermission = MPU_REGION_FULL_ACCESS,
+          .DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE,
+          .IsShareable = MPU_ACCESS_NOT_SHAREABLE,
+          .IsCacheable = MPU_ACCESS_CACHEABLE,
+          .IsBufferable = MPU_ACCESS_NOT_BUFFERABLE,
+      },
+      {
+          .Enable = MPU_REGION_ENABLE,
+          .BaseAddress = PERIPH_BASE,
+          .Size = MPU_REGION_SIZE_512MB,
+          .SubRegionDisable = 0,
+          .TypeExtField = MPU_TEX_LEVEL0,
+          .AccessPermission = MPU_REGION_FULL_ACCESS,
+          .DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE,
+          .IsShareable = MPU_ACCESS_SHAREABLE,
+          .IsCacheable = MPU_ACCESS_NOT_CACHEABLE,
+          .IsBufferable = MPU_ACCESS_BUFFERABLE,
+      },
+      {
+          .Enable = MPU_REGION_ENABLE,
+          .BaseAddress = 0x1FFF0000, // Option Bytes, OTP Area, System Memory
+          .Size = MPU_REGION_SIZE_64KB,
+          .SubRegionDisable = 0,
+          .TypeExtField = MPU_TEX_LEVEL0,
+          .AccessPermission = MPU_REGION_PRIV_RO,
+          .DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE,
+          .IsShareable = MPU_ACCESS_NOT_SHAREABLE,
+          .IsCacheable = MPU_ACCESS_CACHEABLE,
+          .IsBufferable = MPU_ACCESS_NOT_BUFFERABLE,
+      },
+  };
+  HAL_MPU_Disable();
+  for (int i = 0; i < nRegion; i++) {
+    if (i < sizeof(configs) / sizeof(configs[0])) {
+      configs[i].Number = i;
+      HAL_MPU_ConfigRegion(configs + i);
+    } else {
+      MPU->RNR = i;
+      MPU->RBAR = 0;
+      MPU->RASR = 0;
+    }
+  }
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+  SCB->SHCSR |= SCB_SHCSR_BUSFAULTENA_Msk;
+  NVIC_SetPriority(MemoryManagement_IRQn, -1);
+  NVIC_SetPriority(BusFault_IRQn, -1);
+
+  HAL_MPU_Enable(0);
+  return 0;
+}
 /* USER CODE END 0 */
 
 /**
@@ -165,7 +237,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  SetupMPU();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
