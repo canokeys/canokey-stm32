@@ -62,6 +62,7 @@ UART_HandleTypeDef huart2;
 static uint16_t touch_threshold = 500;
 const uint32_t UNTOUCHED_MAX_VAL = 1000;
 const uint32_t CALI_TIMES = 4;
+extern uint32_t _stack_boundary;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -150,6 +151,18 @@ int SetupMPU(void) {
           .SubRegionDisable = 0,
           .TypeExtField = MPU_TEX_LEVEL0,
           .AccessPermission = MPU_REGION_FULL_ACCESS,
+          .DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE,
+          .IsShareable = MPU_ACCESS_SHAREABLE,
+          .IsCacheable = MPU_ACCESS_CACHEABLE,
+          .IsBufferable = MPU_ACCESS_NOT_BUFFERABLE,
+      },
+      {
+          .Enable = MPU_REGION_ENABLE,
+          .BaseAddress = ((uint32_t)&_stack_boundary) - 0x100,
+          .Size = MPU_REGION_SIZE_256B, // stack overflow protection
+          .SubRegionDisable = 0,
+          .TypeExtField = MPU_TEX_LEVEL0,
+          .AccessPermission = MPU_REGION_NO_ACCESS,
           .DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE,
           .IsShareable = MPU_ACCESS_SHAREABLE,
           .IsCacheable = MPU_ACCESS_CACHEABLE,
