@@ -7,10 +7,10 @@ set(STARTUP_ASM_FILE "startup_stm32l432xx.s")
 set(CMAKE_SYSTEM_PROCESSOR "cortex-m4")
 set(MCU_LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32L432KBUx_FLASH.ld")
 
-set(CMAKE_C_FLAGS "-mcpu=${CMAKE_SYSTEM_PROCESSOR} -mthumb -Wall -fdata-sections -ffunction-sections ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-mcpu=${CMAKE_SYSTEM_PROCESSOR} -mthumb -Wall -fno-strict-aliasing -fdata-sections -ffunction-sections ${CMAKE_C_FLAGS}")
 set(CMAKE_ASM_FLAGS "-mcpu=${CMAKE_SYSTEM_PROCESSOR} -mthumb -Wall -fdata-sections -ffunction-sections ${CMAKE_ASM_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "-specs=nano.specs -T${MCU_LINKER_SCRIPT} -Wl,-Map=layout.map,--cref -Wl,--gc-sections ${CMAKE_EXE_LINKER_FLAGS}")
-set(CMAKE_C_FLAGS_RELEASE "-Os")
+set(CMAKE_C_FLAGS_RELEASE "-Os -g3")
 
 add_definitions(-DMBEDTLS_CONFIG_FILE="${CMAKE_SOURCE_DIR}/Inc/mbedtls-config.h")
 add_subdirectory(canokey-core)
