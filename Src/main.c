@@ -126,8 +126,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
     if (GPIO_Touched()) {
       set_touch_result(TOUCH_SHORT);
-      deassert_at = HAL_GetTick() + 150;
+      deassert_at = HAL_GetTick() + 2000;
     } else if (HAL_GetTick() > deassert_at) {
+      DBG_MSG("De-assert\r\n");
       set_touch_result(TOUCH_NO);
       deassert_at = ~0u;
     }
