@@ -32,7 +32,7 @@ static int program_space(uint32_t paddr, const void *buffer, lfs_size_t size)
     int ret = 0;
     for (lfs_size_t i = 0; i < size; i += WRITE_SIZE)
     {
-        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, paddr + i, *(const uint64_t*)(buffer + i)) != HAL_OK){
+        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, paddr + i, *(const uint64_t*)((uintptr_t)buffer + i)) != HAL_OK){
             ERR_MSG("Flash prog fail @%#lx", paddr + i);
             ret = LFS_ERR_CORRUPT;
             break;
