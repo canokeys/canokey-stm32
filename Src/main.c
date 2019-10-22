@@ -62,6 +62,7 @@ UART_HandleTypeDef huart2;
 static uint16_t touch_threshold = 500;
 const uint32_t UNTOUCHED_MAX_VAL = 1000;
 const uint32_t CALI_TIMES = 4;
+static volatile uint32_t blinking_until;
 extern uint32_t _stack_boundary;
 /* USER CODE END PV */
 
@@ -124,6 +125,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (testcnt % 150 == 0) {
       CCID_TimeExtensionLoop();
     }
+    if (HAL_GetTick() > blinking_until) {
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+    } else {
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((testcnt >> 9) & 1));
+    }
     if (GPIO_Touched()) {
       set_touch_result(TOUCH_SHORT);
       deassert_at = HAL_GetTick() + 2000;
@@ -135,6 +141,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     testcnt++;
   }
 }
+void device_start_blinking(uint8_t sec) {
+  blinking_until = HAL_GetTick() + sec * 1000u;
+  DBG_MSG("Start blinking until %u\n", blinking_until);
+};
+void device_stop_blinking(void) { blinking_until = 0; }
 // override the function defined in rand.c
 uint32_t random32(void) {
   uint32_t v;

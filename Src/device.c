@@ -11,6 +11,3 @@ void device_disable_irq(void) { __disable_irq(); }
 
 void device_enable_irq(void) { __enable_irq(); }
 
-void device_start_blinking(uint8_t sec) {}
-
-void device_stop_blinking(void) {}
