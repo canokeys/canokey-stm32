@@ -142,8 +142,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
 }
 void device_start_blinking(uint8_t sec) {
-  blinking_until = HAL_GetTick() + sec * 1000u;
-  DBG_MSG("Start blinking until %u\n", blinking_until);
+  if (!sec) {
+    blinking_until = ~0u;
+    DBG_MSG("Start blinking\n");
+  } else {
+    blinking_until = HAL_GetTick() + sec * 1000u;
+    DBG_MSG("Start blinking until %u\n", blinking_until);
+  }
 };
 void device_stop_blinking(void) { blinking_until = 0; }
 // override the function defined in rand.c
