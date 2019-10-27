@@ -59,8 +59,8 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-static uint16_t touch_threshold = 500;
-const uint32_t UNTOUCHED_MAX_VAL = 1000;
+static uint16_t touch_threshold = 5, measure_touch;
+const uint32_t UNTOUCHED_MAX_VAL = 10; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
 static volatile uint32_t blinking_until;
 extern uint32_t _stack_boundary;
@@ -113,9 +113,10 @@ GPIO_PinState GPIO_Touched(void) {
   uint32_t counter = 0;
   LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
   __disable_irq();
-  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && counter <= touch_threshold)
+  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin)/*  && counter <= touch_threshold */)
     ++counter;
   __enable_irq();
+  if (counter > measure_touch) measure_touch = counter;
   return counter > touch_threshold ? GPIO_PIN_SET : GPIO_PIN_RESET;
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -134,7 +135,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       set_touch_result(TOUCH_SHORT);
       deassert_at = HAL_GetTick() + 2000;
     } else if (HAL_GetTick() > deassert_at) {
-      DBG_MSG("De-assert\r\n");
+      DBG_MSG("De-assert %u\r\n", measure_touch);
+      measure_touch = 0;
       set_touch_result(TOUCH_NO);
       deassert_at = ~0u;
     }
