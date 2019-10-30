@@ -40,7 +40,7 @@ add_custom_target(canokey.bin
 
 add_custom_target(dfu
     DEPENDS canokey.bin
-    COMMAND sudo dfu-util -d 0483:df11 -a 0 -s 0x08000000 -D canokey.bin -R)
+    COMMAND sudo dfu-util -d 0483:df11 -a 0 -s 0x08000000 -D canokey.bin -t 1024)
 
 add_custom_target(flash
     DEPENDS canokey.bin
