@@ -252,8 +252,20 @@ g_pfnVectors:
 	.weak	UsageFault_Handler
 	.thumb_set UsageFault_Handler,Default_Handler
 
-	.weak	SVC_Handler
-	.thumb_set SVC_Handler,Default_Handler
+    .section	.text.SVC_Handler
+	.type	SVC_Handler, %function
+SVC_Handler:
+                MOVS    R0, #4
+                MOV     R1, LR
+                TST     R0, R1
+                BEQ     stacking_used_MSP
+                MRS     R0, PSP
+                LDR     R1, =SVC_Handler_Main
+                BX      R1
+stacking_used_MSP:
+                MRS     R0, MSP
+                LDR     R1, =SVC_Handler_Main
+                BX      R1
 
 	.weak	DebugMon_Handler
 	.thumb_set DebugMon_Handler,Default_Handler

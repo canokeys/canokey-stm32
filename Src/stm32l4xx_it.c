@@ -242,5 +242,32 @@ void USB_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
+void SVC_Handler_Main(unsigned int *svc_args) {
+  unsigned int ret = 0xFFFFFFFF;
+
+  /*
+   * Stack contains:
+   * r0, r1, r2, r3, r12, r14, the return address and xPSR
+   * First argument (r0) is svc_args[0]
+   */
+  unsigned int svc_number = ((char *)svc_args[6])[-2];
+  switch (svc_number) {
+  case 1: { // svc_try_lock()
+    uint32_t *lock = (uint32_t *)svc_args[0];
+    if (*lock)
+      ret = 0xFFFFFFFF; // failed to lock
+    else {
+      *lock = 1;
+      ret = 0;
+      __DMB();
+    }
+    break;
+  }
+  default: /* unknown SVC */
+    break;
+  }
+  svc_args[0] = ret;
+}
+
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

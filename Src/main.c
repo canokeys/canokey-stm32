@@ -243,6 +243,13 @@ int SetupMPU(void) {
   HAL_MPU_Enable(0);
   return 0;
 }
+
+__attribute__((always_inline)) unsigned svc_try_lock(lock_addr) {
+  register unsigned r0 asm("r0") = lock_addr;
+  __asm volatile("SVC #1" : "=r"(r0) : "r"(r0));
+  return r0; // value returned from SVC
+}
+uint32_t test_lock;
 /* USER CODE END 0 */
 
 /**
@@ -280,6 +287,10 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+  DBG_MSG("test_lock=%d\n", test_lock);
+  DBG_MSG("svc_try_lock()=%d\n", svc_try_lock(&test_lock));
+  DBG_MSG("test_lock=%d\n", test_lock);
+  DBG_MSG("svc_try_lock()=%d\n", svc_try_lock(&test_lock));
 
   DBG_MSG("Init FS\n");
   littlefs_init();
