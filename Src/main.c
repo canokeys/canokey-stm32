@@ -243,6 +243,20 @@ int SetupMPU(void) {
   HAL_MPU_Enable(0);
   return 0;
 }
+void EnableRDP(void) {
+  FLASH_OBProgramInitTypeDef ob;
+  HAL_FLASHEx_OBGetConfig(&ob); 
+  if (ob.RDPLevel != OB_RDP_LEVEL_0) return;
+  ob.RDPLevel = OB_RDP_LEVEL_1;
+  ob.OptionType = OPTIONBYTE_RDP;
+  HAL_FLASH_Unlock();
+  HAL_FLASH_OB_Unlock();
+  HAL_StatusTypeDef ret = HAL_FLASHEx_OBProgram(&ob);
+  if(ret != HAL_OK) {
+    ERR_MSG("HAL_FLASHEx_OBProgram failed\n");
+  }
+  HAL_FLASH_Lock();
+}
 /* USER CODE END 0 */
 
 /**
@@ -280,7 +294,8 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-
+  DBG_MSG("Enable RDP\n");
+  EnableRDP();
   DBG_MSG("Init FS\n");
   littlefs_init();
   DBG_MSG("Init applets\r\n");
