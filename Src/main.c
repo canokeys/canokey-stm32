@@ -243,11 +243,10 @@ int SetupMPU(void) {
   HAL_MPU_Enable(0);
   return 0;
 }
-void EnableRDP(void) {
+void EnableRDP(uint32_t level) {
   FLASH_OBProgramInitTypeDef ob;
   HAL_FLASHEx_OBGetConfig(&ob); 
-  if (ob.RDPLevel != OB_RDP_LEVEL_0) return;
-  ob.RDPLevel = OB_RDP_LEVEL_1;
+  ob.RDPLevel = level;
   ob.OptionType = OPTIONBYTE_RDP;
   HAL_FLASH_Unlock();
   HAL_FLASH_OB_Unlock();
@@ -256,6 +255,19 @@ void EnableRDP(void) {
     ERR_MSG("HAL_FLASHEx_OBProgram failed\n");
   }
   HAL_FLASH_Lock();
+}
+// override the function defined in admin.c
+int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
+  if(P1 == 0x55) {
+    DBG_MSG("Enable RDP level %d\n", (int)P2);
+    if (P2 == 1)
+      EnableRDP(OB_RDP_LEVEL_1);
+    else if(P2 == 2)
+      EnableRDP(OB_RDP_LEVEL_2);
+    else
+      EXCEPT(SW_WRONG_P1P2);
+  }
+  return 0;
 }
 /* USER CODE END 0 */
 
@@ -294,8 +306,6 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  DBG_MSG("Enable RDP\n");
-  EnableRDP();
   DBG_MSG("Init FS\n");
   littlefs_init();
   DBG_MSG("Init applets\r\n");
