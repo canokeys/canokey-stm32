@@ -26,5 +26,5 @@ deploy:
   file: build/canokey.bin
   skip_cleanup: true
   on:
-    repo: canopo/canokey-stm32
+    repo: canokeys/canokey-stm32
     tags: true
