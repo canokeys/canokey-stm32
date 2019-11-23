@@ -256,6 +256,24 @@ void EnableRDP(uint32_t level) {
   }
   HAL_FLASH_Lock();
 }
+void EnterDFUBootloader() {
+  typedef void (*pFunction)(void);
+  pFunction JumpToApplication;
+  HAL_RCC_DeInit();
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
+  __disable_irq();
+  HAL_MPU_Disable();
+  __DSB();
+  __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+  __DSB();
+  __ISB();
+  JumpToApplication =
+      (void (*)(void))(*((uint32_t *)(0x1FFF0000 + 4))); /* Initialize user application's Stack Pointer */
+  __set_MSP(*(__IO uint32_t *)0x1FFF0000);
+  JumpToApplication();
+}
 // override the function defined in admin.c
 int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
   if(P1 == 0x55) {
@@ -266,8 +284,13 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
       EnableRDP(OB_RDP_LEVEL_2);
     else
       EXCEPT(SW_WRONG_P1P2);
+  } else if(P1 == 0x22 && P2 == 0x22) {
+    DBG_MSG("Entering DFU\n");
+    EnterDFUBootloader();
+    ERR_MSG("Failed to enter DFU\n");
+    for(;;);
   }
-  return 0;
+  EXCEPT(SW_WRONG_P1P2);
 }
 /* USER CODE END 0 */
 
