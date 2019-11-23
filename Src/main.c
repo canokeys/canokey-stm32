@@ -260,10 +260,14 @@ void EnterDFUBootloader() {
   typedef void (*pFunction)(void);
   pFunction JumpToApplication;
   HAL_RCC_DeInit();
+  for (int i = 0; i < CRS_IRQn; i++) {
+    HAL_NVIC_DisableIRQ(i);
+  }
   SysTick->CTRL = 0;
   SysTick->LOAD = 0;
   SysTick->VAL = 0;
   __disable_irq();
+  usb_device_deinit();
   HAL_MPU_Disable();
   __DSB();
   __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
@@ -284,6 +288,7 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
       EnableRDP(OB_RDP_LEVEL_2);
     else
       EXCEPT(SW_WRONG_P1P2);
+    return 0;
   } else if(P1 == 0x22 && P2 == 0x22) {
     DBG_MSG("Entering DFU\n");
     EnterDFUBootloader();
