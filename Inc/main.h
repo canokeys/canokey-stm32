@@ -48,6 +48,9 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 #define DBG_UART huart2
+#ifndef GIT_COMMIT_HASH
+#define GIT_COMMIT_HASH unknown
+#endif
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
