@@ -1,11 +1,91 @@
+#include "device-stm32.h"
 #include "main.h"
+#include "stm32l4xx_ll_gpio.h"
+#include <ccid.h>
 #include <device.h>
+
+/* This file overrides functions defined in canokey-core/src/device.c */
+
+static volatile uint32_t blinking_until;
+static uint16_t touch_threshold = 5, measure_touch;
+const uint32_t UNTOUCHED_MAX_VAL = 10; /* Suitable for 56K pull-down resistor */
+const uint32_t CALI_TIMES = 4;
 
 void device_delay(int ms) { HAL_Delay(ms); }
 
 uint32_t device_get_tick(void) { return HAL_GetTick(); }
 
 uint8_t is_nfc(void) { return 0; }
+
+void GPIO_Touch_Calibrate(void) {
+  uint32_t sum = 0;
+  for (int i = 0; i < CALI_TIMES; ++i) {
+    LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
+    LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
+
+    for (int j = 0; j < 100; ++j)
+      asm volatile("nop");
+    LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
+    __disable_irq();
+    while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) && sum < UNTOUCHED_MAX_VAL * CALI_TIMES)
+      ++sum;
+    __enable_irq();
+    // DBG_MSG("val %u\n", sum);
+  }
+  if (sum == UNTOUCHED_MAX_VAL * CALI_TIMES) {
+    DBG_MSG("max limit exceeded, discard...\n");
+    return;
+  }
+
+  touch_threshold = sum / CALI_TIMES * 2;
+  DBG_MSG("touch_threshold %u\n", touch_threshold);
+}
+
+static GPIO_PinState GPIO_Touched(void) {
+  LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
+  LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
+  for (int i = 0; i < 100; ++i)
+    asm volatile("nop");
+  uint32_t counter = 0;
+  LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_INPUT);
+  __disable_irq();
+  while ((LL_GPIO_ReadInputPort(TOUCH_GPIO_Port) & TOUCH_Pin) /*  && counter <= touch_threshold */)
+    ++counter;
+  __enable_irq();
+  if (counter > measure_touch) measure_touch = counter;
+  return counter > touch_threshold ? GPIO_PIN_SET : GPIO_PIN_RESET;
+}
+
+void device_periodic_task(void) {
+    static uint32_t testcnt = 0, deassert_at = ~0u;
+    if (HAL_GetTick() > blinking_until) {
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+    } else {
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((testcnt >> 9) & 1));
+    }
+    if (GPIO_Touched()) {
+      set_touch_result(TOUCH_SHORT);
+      deassert_at = HAL_GetTick() + 2000;
+    } else if (HAL_GetTick() > deassert_at) {
+      DBG_MSG("De-assert %u\r\n", measure_touch);
+      measure_touch = 0;
+      set_touch_result(TOUCH_NO);
+      deassert_at = ~0u;
+    }
+    testcnt++;
+}
+
+void device_start_blinking(uint8_t sec) {
+  if (!sec) {
+    blinking_until = ~0u;
+    DBG_MSG("Start blinking\n");
+  } else {
+    blinking_until = HAL_GetTick() + sec * 1000u;
+    DBG_MSG("Start blinking until %u\n", blinking_until);
+  }
+};
+
+void device_stop_blinking(void) { blinking_until = 0; }
 
 // ARM Cortex-M Programming Guide to Memory Barrier Instructions,	Application Note 321
 
