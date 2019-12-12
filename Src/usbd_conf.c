@@ -29,6 +29,7 @@
 #include "usb_device.h"
 #include "usbd_ccid.h"
 #include "usbd_ctaphid.h"
+#include "usbd_kbdhid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -365,6 +366,12 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
     PMA_addr += CTAPHID_EPIN_SIZE;
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ctap_hid), PCD_SNG_BUF, PMA_addr);
     PMA_addr += CTAPHID_EPOUT_SIZE;
+  }
+  if (EP_OUT(kbd_hid) != 0xFF) {
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(kbd_hid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += KBDHID_EPIN_SIZE;
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(kbd_hid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += KBDHID_EPOUT_SIZE;
   }
   /* USER CODE END EndPoint_Configuration_CUSTOM_HID */
   return USBD_OK;
