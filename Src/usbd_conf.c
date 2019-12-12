@@ -26,6 +26,7 @@
 #include "usbd_core.h"
 
 /* USER CODE BEGIN Includes */
+#include "usb_device.h"
 #include "usbd_ccid.h"
 #include "usbd_ctaphid.h"
 /* USER CODE END Includes */
@@ -347,18 +348,24 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   PMA_addr += 0x40;
   /* USER CODE END EndPoint_Configuration */
   /* USER CODE BEGIN EndPoint_Configuration_CUSTOM_HID */
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CCID_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += CCID_EPIN_SIZE;
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CCID_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += CCID_EPOUT_SIZE;
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , OPENPGP_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += OPENPGP_EPIN_SIZE;
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , OPENPGP_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += OPENPGP_EPOUT_SIZE;
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CTAPHID_EPIN_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += CTAPHID_EPIN_SIZE;
-  HAL_PCDEx_PMAConfig(&hpcd_USB_FS , CTAPHID_EPOUT_ADDR , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += CTAPHID_EPOUT_SIZE;
+  if (EP_OUT(ccid) != 0xFF) {
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(ccid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += CCID_EPIN_SIZE;
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ccid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += CCID_EPOUT_SIZE;
+  }
+  if (EP_OUT(openpgp) != 0xFF) {
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(openpgp), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += OPENPGP_EPIN_SIZE;
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(openpgp), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += OPENPGP_EPOUT_SIZE;
+  }
+  if (EP_OUT(ctap_hid) != 0xFF) {
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(ctap_hid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += CTAPHID_EPIN_SIZE;
+    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ctap_hid), PCD_SNG_BUF, PMA_addr);
+    PMA_addr += CTAPHID_EPOUT_SIZE;
+  }
   /* USER CODE END EndPoint_Configuration_CUSTOM_HID */
   return USBD_OK;
 }
