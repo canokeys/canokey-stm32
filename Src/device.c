@@ -4,6 +4,7 @@
 #include <admin.h>
 #include <ccid.h>
 #include <device.h>
+#include <usb_device.h>
 
 /* This file overrides functions defined in canokey-core/src/device.c */
 
@@ -87,6 +88,38 @@ void device_start_blinking(uint8_t sec) {
 };
 
 void device_stop_blinking(void) { blinking_until = 0; }
+
+/* Override the function defined in usb_device.c */
+void usb_resources_alloc(void) {
+  uint8_t iface = 0;
+  uint8_t ep = 1;
+
+  memset(&IFACE_TABLE, 0xFF, sizeof(IFACE_TABLE));
+  memset(&EP_TABLE, 0xFF, sizeof(EP_TABLE));
+
+  EP_TABLE.ctap_hid = ep++;
+  IFACE_TABLE.ctap_hid = iface++;
+  EP_SIZE_TABLE.ctap_hid = 64;
+
+  IFACE_TABLE.webusb = iface++;
+
+  EP_TABLE.ccid = ep++;
+  IFACE_TABLE.ccid = iface++;
+  EP_SIZE_TABLE.ccid = 64;
+
+  if (cfg_is_gpg_interface_enable() && ep <= EP_ADDR_MSK) {
+    DBG_MSG("OpenPGP interface enabled, Iface %u\n", iface);
+    EP_TABLE.openpgp = ep++;
+    IFACE_TABLE.openpgp = iface++;
+    EP_SIZE_TABLE.openpgp = 64;
+  }
+  if (cfg_is_kbd_interface_enable() && ep <= EP_ADDR_MSK) {
+    DBG_MSG("Keyboard interface enabled, Iface %u\n", iface);
+    EP_TABLE.kbd_hid = ep++;
+    IFACE_TABLE.kbd_hid = iface++;
+    IFACE_TABLE.kbd_hid = 8;
+  }
+}
 
 // ARM Cortex-M Programming Guide to Memory Barrier Instructions,	Application Note 321
 

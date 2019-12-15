@@ -351,27 +351,27 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   /* USER CODE BEGIN EndPoint_Configuration_CUSTOM_HID */
   if (EP_OUT(ccid) != 0xFF) {
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(ccid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += CCID_EPIN_SIZE;
+    PMA_addr += EP_SIZE(ccid);
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ccid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += CCID_EPOUT_SIZE;
+    PMA_addr += EP_SIZE(ccid);
   }
   if (EP_OUT(openpgp) != 0xFF) {
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(openpgp), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += OPENPGP_EPIN_SIZE;
+    PMA_addr += EP_SIZE(openpgp);
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(openpgp), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += OPENPGP_EPOUT_SIZE;
+    PMA_addr += EP_SIZE(openpgp);
   }
   if (EP_OUT(ctap_hid) != 0xFF) {
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(ctap_hid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += CTAPHID_EPIN_SIZE;
+    PMA_addr += EP_SIZE(ctap_hid);
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ctap_hid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += CTAPHID_EPOUT_SIZE;
+    PMA_addr += EP_SIZE(ctap_hid);
   }
   if (EP_OUT(kbd_hid) != 0xFF) {
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(kbd_hid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += KBDHID_EPIN_SIZE;
+    PMA_addr += EP_SIZE(kbd_hid);
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(kbd_hid), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += KBDHID_EPOUT_SIZE;
+    PMA_addr += EP_SIZE(kbd_hid);
   }
   /* USER CODE END EndPoint_Configuration_CUSTOM_HID */
   return USBD_OK;
