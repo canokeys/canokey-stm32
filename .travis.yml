@@ -15,8 +15,9 @@ install:
 - sudo tar -xf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2 -C /opt
 script:
 - mkdir build && pushd build
+- touch git_hash.c
 - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake  -DCROSS_COMPILE=/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-
-  -DCMAKE_BUILD_TYPE=Release ..
+  -DCMAKE_BUILD_TYPE=Release -DENABLE_DEBUG_OUTPUT=OFF ..
 - make -j2 canokey.bin
 - popd
 deploy:
