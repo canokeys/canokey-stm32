@@ -47,8 +47,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define XSTR(s) #s
-#define XSTR_MACRO(s) XSTR(s)
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,7 +61,6 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
-const char *fw_git_version = XSTR_MACRO(GIT_COMMIT_HASH);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -219,9 +217,9 @@ void EnterDFUBootloader() {
 // override the function defined in admin.c
 int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
   if(P1 == 0x00 && P2 == 0x00) {
-    size_t len = strlen(fw_git_version);
-    LL = MIN(len, LE);
-    memcpy(RDATA, fw_git_version, LL);
+    size_t len = strnlen(fw_git_version, LE);
+    LL = len;
+    memcpy(RDATA, fw_git_version, len);
     return 0;
   } else if (P1 == 0x55) {
     DBG_MSG("Enable RDP level %d\n", (int)P2);

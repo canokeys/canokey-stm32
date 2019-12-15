@@ -49,16 +49,13 @@ extern "C" {
 /* USER CODE BEGIN EM */
 #define DBG_UART huart2
 #define TIM_PERIODIC htim6
-#ifndef GIT_COMMIT_HASH
-#define GIT_COMMIT_HASH unknown
-#endif
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+extern const char *fw_git_version;
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

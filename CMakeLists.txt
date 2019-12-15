@@ -31,16 +31,11 @@ target_include_directories(canokey PRIVATE Drivers/CMSIS/Device/ST/STM32L4xx/Inc
 target_include_directories(canokey PRIVATE Drivers/CMSIS/Include)
 target_include_directories(canokey PRIVATE Inc)
 
-execute_process(
-  COMMAND git describe --always --tags --long --abbrev=8 --dirty
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  RESULT_VARIABLE GIT_RET_CODE
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(GIT_RET_CODE EQUAL "0")
-    target_compile_definitions(canokey PRIVATE GIT_COMMIT_HASH=${GIT_COMMIT_HASH})
-endif()
+add_custom_command(TARGET canokey PRE_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/gen-git-hash.sh"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/git_hash.c"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+target_sources(canokey PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/git_hash.c")
 
 add_custom_command(TARGET canokey POST_BUILD
     COMMAND "${CROSS_COMPILE}size" canokey)
