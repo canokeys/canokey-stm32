@@ -24,15 +24,16 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "device-stm32.h"
+#include "lfs_init.h"
 #include <admin.h>
 #include <ccid.h>
 #include <ctap.h>
 #include <device.h>
+#include <nfc.h>
 #include <oath.h>
 #include <openpgp.h>
 #include <piv.h>
-#include "lfs_init.h"
-#include "device-stm32.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,25 +77,25 @@ static void MX_TIM6_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void MX_USB_DEVICE_Init(){}
-
 // override the function defined in Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim == &TIM_PERIODIC) {
     static uint32_t cnt_micro_sec = 0;
-    if (cnt_micro_sec % 150 == 0) {
-      CCID_TimeExtensionLoop();
-    }
+    if (cnt_micro_sec % 300 == 0) nfc_wtx();
+    if (cnt_micro_sec % 5000 == 0) CCID_TimeExtensionLoop();
     cnt_micro_sec++;
     device_periodic_task();
   }
 }
+
 // override the function defined in rand.c
 uint32_t random32(void) {
   uint32_t v;
-  while (HAL_RNG_GenerateRandomNumber(&hrng, &v) != HAL_OK);
+  while (HAL_RNG_GenerateRandomNumber(&hrng, &v) != HAL_OK)
+    ;
   return v;
 }
+
 int SetupMPU(void) {
   if (MPU->TYPE == 0) return -1;
   int nRegion = MPU->TYPE >> 8 & 0xFF;
@@ -179,19 +180,21 @@ int SetupMPU(void) {
   HAL_MPU_Enable(0);
   return 0;
 }
+
 void EnableRDP(uint32_t level) {
   FLASH_OBProgramInitTypeDef ob;
-  HAL_FLASHEx_OBGetConfig(&ob); 
+  HAL_FLASHEx_OBGetConfig(&ob);
   ob.RDPLevel = level;
   ob.OptionType = OPTIONBYTE_RDP;
   HAL_FLASH_Unlock();
   HAL_FLASH_OB_Unlock();
   HAL_StatusTypeDef ret = HAL_FLASHEx_OBProgram(&ob);
-  if(ret != HAL_OK) {
+  if (ret != HAL_OK) {
     ERR_MSG("HAL_FLASHEx_OBProgram failed\n");
   }
   HAL_FLASH_Lock();
 }
+
 void EnterDFUBootloader() {
   typedef void (*pFunction)(void);
   pFunction JumpToApplication;
@@ -214,9 +217,10 @@ void EnterDFUBootloader() {
   __set_MSP(*(__IO uint32_t *)0x1FFF0000);
   JumpToApplication();
 }
+
 // override the function defined in admin.c
 int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
-  if(P1 == 0x00 && P2 == 0x00) {
+  if (P1 == 0x00 && P2 == 0x00) {
     size_t len = strnlen(fw_git_version, LE);
     LL = len;
     memcpy(RDATA, fw_git_version, len);
@@ -225,18 +229,63 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
     DBG_MSG("Enable RDP level %d\n", (int)P2);
     if (P2 == 1)
       EnableRDP(OB_RDP_LEVEL_1);
-    else if(P2 == 2)
+    else if (P2 == 2)
       EnableRDP(OB_RDP_LEVEL_2);
     else
       EXCEPT(SW_WRONG_P1P2);
     return 0;
-  } else if(P1 == 0x22 && P2 == 0x22) {
+  } else if (P1 == 0x22 && P2 == 0x22) {
     DBG_MSG("Entering DFU\n");
     EnterDFUBootloader();
     ERR_MSG("Failed to enter DFU\n");
-    for(;;);
+    for (;;)
+      ;
   }
   EXCEPT(SW_WRONG_P1P2);
+}
+
+void SystemClock_Config_NFC(void) {
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+
+  /* Change Clock Source to MSI */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
+
+  /* Set the CPU, AHB and APB busses clocks */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 32;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV8;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+
+  /* Set the CPU, AHB and APB busses clocks */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+      |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
+
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_RNG;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) Error_Handler();
+
+  /* Set SPI Baudrate */
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK) Error_Handler();
 }
 /* USER CODE END 0 */
 
@@ -264,43 +313,57 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  SetupMPU();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_RNG_Init();
   MX_SPI1_Init();
-  MX_USART2_UART_Init();
-  MX_USB_DEVICE_Init();
+  set_nfc(nfc_has_rf());
+  if (is_nfc()) {
+    nfc_init();
+    SystemClock_Config_NFC();
+  }
+  MX_RNG_Init();
   MX_TIM6_Init();
+  MX_USART2_UART_Init();
+  SetupMPU();
   /* USER CODE BEGIN 2 */
+  DBG_MSG("Mode: %s\n", is_nfc() ? "NFC" : "USB");
+
   DBG_MSG("Init FS\n");
   littlefs_init();
-  DBG_MSG("Init applets\r\n");
+
+  DBG_MSG("Init applets\n");
   admin_install(); // initialize admin applet first to load config
   openpgp_install(0);
   piv_install(0);
   oath_install(0);
   ctap_install(0);
-  DBG_MSG("Init USB\r\n");
-  usb_device_init();
-  DBG_MSG("Main Loop\r\n");
+
+  if (!is_nfc()) {
+    DBG_MSG("Init USB\n");
+    usb_device_init();
+  }
+
+  DBG_MSG("Main Loop\n");
   HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  for (uint32_t i = 0; ;i++)
-  {
+  for (uint32_t i = 0; ; ++i) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if((i & ((1<<23)-1)) == 0) {
-      DBG_MSG("Touch calibrating...\r\n");
-      GPIO_Touch_Calibrate();
+    if (is_nfc()) {
+      nfc_loop();
+    } else {
+      if ((i & ((1 << 23) - 1)) == 0) {
+        DBG_MSG("Touch calibrating...\n");
+        GPIO_Touch_Calibrate();
+      }
+      device_loop();
     }
-    device_loop();
   }
   /* USER CODE END 3 */
 }
@@ -318,18 +381,17 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 40;
+  RCC_OscInitStruct.PLL.PLLN = 72;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV6;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -350,8 +412,8 @@ void SystemClock_Config(void)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USB
                               |RCC_PERIPHCLK_RNG;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
-  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -423,10 +485,10 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -461,9 +523,12 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 8000;
+  htim6.Init.Prescaler = 7999;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 9;
+  if (is_nfc())
+    htim6.Init.Period = 1;
+  else
+    htim6.Init.Period = 8;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -538,7 +603,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : FM_IRQN_Pin */
   GPIO_InitStruct.Pin = FM_IRQN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(FM_IRQN_GPIO_Port, &GPIO_InitStruct);
 
@@ -562,10 +627,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(TOUCH_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == FM_IRQN_Pin) {
+    nfc_handler();
+  }
+}
 /* USER CODE END 4 */
 
 /**

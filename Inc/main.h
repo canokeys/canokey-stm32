@@ -49,6 +49,7 @@ extern "C" {
 /* USER CODE BEGIN EM */
 #define DBG_UART huart2
 #define TIM_PERIODIC htim6
+#define FM_SPI hspi1
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -61,6 +62,7 @@ extern const char *fw_git_version;
 /* Private defines -----------------------------------------------------------*/
 #define FM_IRQN_Pin GPIO_PIN_0
 #define FM_IRQN_GPIO_Port GPIOA
+#define FM_IRQN_EXTI_IRQn EXTI0_IRQn
 #define FM_SSN_Pin GPIO_PIN_4
 #define FM_SSN_GPIO_Port GPIOA
 #define LED_Pin GPIO_PIN_3

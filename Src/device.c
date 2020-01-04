@@ -1,8 +1,6 @@
-#include "device-stm32.h"
 #include "main.h"
 #include "stm32l4xx_ll_gpio.h"
 #include <admin.h>
-#include <ccid.h>
 #include <device.h>
 #include <usb_device.h>
 
@@ -10,6 +8,7 @@
 
 static volatile uint32_t blinking_until;
 static uint16_t touch_threshold = 5, measure_touch;
+static uint8_t has_rf;
 const uint32_t UNTOUCHED_MAX_VAL = 10; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
 
@@ -17,7 +16,9 @@ void device_delay(int ms) { HAL_Delay(ms); }
 
 uint32_t device_get_tick(void) { return HAL_GetTick(); }
 
-uint8_t is_nfc(void) { return 0; }
+void set_nfc(uint8_t val) { has_rf = val; }
+
+uint8_t is_nfc(void) { return has_rf; }
 
 void GPIO_Touch_Calibrate(void) {
   uint32_t sum = 0;
@@ -107,16 +108,10 @@ void usb_resources_alloc(void) {
   IFACE_TABLE.ccid = iface++;
   EP_SIZE_TABLE.ccid = 64;
 
-  if (cfg_is_gpg_interface_enable() && ep <= EP_ADDR_MSK) {
-    DBG_MSG("OpenPGP interface enabled, Iface %u\n", iface);
-    EP_TABLE.openpgp = ep++;
-    IFACE_TABLE.openpgp = iface++;
-    EP_SIZE_TABLE.openpgp = 64;
-  }
   if (cfg_is_kbd_interface_enable() && ep <= EP_ADDR_MSK) {
     DBG_MSG("Keyboard interface enabled, Iface %u\n", iface);
-    EP_TABLE.kbd_hid = ep++;
-    IFACE_TABLE.kbd_hid = iface++;
+    EP_TABLE.kbd_hid = ep;
+    IFACE_TABLE.kbd_hid = iface;
     IFACE_TABLE.kbd_hid = 8;
   }
 }
