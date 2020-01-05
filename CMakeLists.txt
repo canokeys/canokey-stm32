@@ -31,16 +31,16 @@ target_include_directories(canokey PRIVATE Drivers/CMSIS/Device/ST/STM32L4xx/Inc
 target_include_directories(canokey PRIVATE Drivers/CMSIS/Include)
 target_include_directories(canokey PRIVATE Inc)
 
-#add_custom_target(git_hash
-#    DEPENDS "${CMAKE_SOURCE_DIR}/Gen/gen-git-hash.sh"
-#    COMMAND "./gen-git-hash.sh"
-#    BYPRODUCTS "${CMAKE_SOURCE_DIR}/Gen/git_hash.c"
-#    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Gen")
-#add_dependencies(canokey git_hash)
+add_custom_target(git_hash
+   DEPENDS "${CMAKE_SOURCE_DIR}/Gen/gen-git-hash.sh"
+   COMMAND "./gen-git-hash.sh"
+   BYPRODUCTS "${CMAKE_SOURCE_DIR}/Gen/git_hash.c"
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Gen")
+add_dependencies(canokey git_hash)
 target_sources(canokey PRIVATE "${CMAKE_SOURCE_DIR}/Gen/git_hash.c")
 # To make sure "git_hash" is built every time we make
-#add_custom_command(TARGET canokey POST_BUILD
-#    COMMAND touch "${CMAKE_SOURCE_DIR}/Gen/gen-git-hash.sh")
+add_custom_command(TARGET canokey POST_BUILD
+   COMMAND touch "${CMAKE_SOURCE_DIR}/Gen/gen-git-hash.sh")
 
 add_custom_command(TARGET canokey POST_BUILD
     COMMAND "${CROSS_COMPILE}size" canokey)

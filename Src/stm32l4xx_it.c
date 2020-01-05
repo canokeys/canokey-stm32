@@ -23,6 +23,7 @@
 #include "stm32l4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "device.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,6 +59,7 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_FS;
 extern TIM_HandleTypeDef htim6;
+extern uint32_t device_loop_enable;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -201,7 +203,13 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  if (device_loop_enable) {
+    static uint32_t cnt = 0;
+    cnt++;
+    if (cnt % 128 == 0) {
+      // device_periodic_task();
+    }
+  }
   /* USER CODE END SysTick_IRQn 1 */
 }
 

@@ -88,22 +88,22 @@ static GPIO_PinState GPIO_Touched(void) {
 }
 
 void device_periodic_task(void) {
-  static uint32_t testcnt = 0, deassert_at = ~0u;
-  if (HAL_GetTick() > blinking_until) {
+  static uint32_t deassert_at = ~0u;
+  uint32_t tick = HAL_GetTick();
+  if (tick > blinking_until) {
     HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, cfg_is_led_normally_on());
   } else {
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((testcnt >> 9) & 1));
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((tick >> 9) & 1));
   }
   if (GPIO_Touched()) {
     set_touch_result(TOUCH_SHORT);
-    deassert_at = HAL_GetTick() + 2000;
-  } else if (HAL_GetTick() > deassert_at) {
+    deassert_at = tick + 2000;
+  } else if (tick > deassert_at) {
     DBG_MSG("De-assert %u\r\n", measure_touch);
     measure_touch = 0;
     set_touch_result(TOUCH_NO);
     deassert_at = ~0u;
   }
-  testcnt++;
 }
 
 void device_start_blinking(uint8_t sec) {
