@@ -56,8 +56,6 @@ RNG_HandleTypeDef hrng;
 
 SPI_HandleTypeDef hspi1;
 
-TIM_HandleTypeDef htim6;
-
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -70,24 +68,12 @@ static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// override the function defined in Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  if (htim == &TIM_PERIODIC) {
-    static uint32_t cnt_micro_sec = 0;
-    if (cnt_micro_sec % 300 == 0) nfc_wtx();
-    if (cnt_micro_sec % 5000 == 0) CCID_TimeExtensionLoop();
-    cnt_micro_sec++;
-    device_periodic_task();
-  }
-}
-
 // override the function defined in rand.c
 uint32_t random32(void) {
   uint32_t v;
@@ -240,6 +226,9 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
     ERR_MSG("Failed to enter DFU\n");
     for (;;)
       ;
+  } else if (P1 == 0xFF) {
+    HAL_Delay(1000);
+    return 0;
   }
   EXCEPT(SW_WRONG_P1P2);
 }
@@ -324,12 +313,9 @@ int main(void)
     SystemClock_Config_NFC();
   }
   MX_RNG_Init();
-  MX_TIM6_Init();
   MX_USART2_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
-  DBG_MSG("Mode: %s\n", is_nfc() ? "NFC" : "USB");
-
   DBG_MSG("Init FS\n");
   littlefs_init();
 
@@ -346,7 +332,6 @@ int main(void)
   }
 
   DBG_MSG("Main Loop\n");
-  HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -502,47 +487,6 @@ static void MX_SPI1_Init(void)
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
-
-}
-
-/**
-  * @brief TIM6 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM6_Init(void)
-{
-
-  /* USER CODE BEGIN TIM6_Init 0 */
-
-  /* USER CODE END TIM6_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM6_Init 1 */
-
-  /* USER CODE END TIM6_Init 1 */
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 7999;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if (is_nfc())
-    htim6.Init.Period = 1;
-  else
-    htim6.Init.Period = 8;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM6_Init 2 */
-
-  /* USER CODE END TIM6_Init 2 */
 
 }
 

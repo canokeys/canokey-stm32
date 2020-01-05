@@ -48,7 +48,6 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 #define DBG_UART huart2
-#define TIM_PERIODIC htim6
 #define FM_SPI hspi1
 /* USER CODE END EM */
 
