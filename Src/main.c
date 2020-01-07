@@ -308,7 +308,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
-  set_nfc(nfc_has_rf());
+  set_nfc_state(nfc_has_rf());
   if (is_nfc()) {
     nfc_init();
     SystemClock_Config_NFC();
