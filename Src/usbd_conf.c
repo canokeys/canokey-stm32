@@ -62,7 +62,7 @@ extern USBD_StatusTypeDef USBD_LL_BatteryCharging(USBD_HandleTypeDef *pdev);
 static void SystemClockConfig_Resume(void);
 
 /* USER CODE END 1 */
-extern void SystemClock_Config(void);
+extern void SystemClock_Config_80M(void);
 
 /*******************************************************************************
                        LL Driver Callbacks (PCD -> USB Device Library)
@@ -232,6 +232,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
     /* Reset SLEEPDEEP bit of Cortex System Control Register. */
     SCB->SCR &= (uint32_t)~((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));
     SystemClockConfig_Resume();
+    DBG_MSG("Wake up\n");
   }
   /* USER CODE END 3 */
   USBD_LL_Resume((USBD_HandleTypeDef*)hpcd->pData);
@@ -795,7 +796,7 @@ void USBD_LL_Delay(uint32_t Delay)
   */
 static void SystemClockConfig_Resume(void)
 {
-  SystemClock_Config();
+  SystemClock_Config_80M();
 }
 /* USER CODE END 5 */
 
