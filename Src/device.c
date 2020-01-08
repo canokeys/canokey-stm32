@@ -89,16 +89,11 @@ static GPIO_PinState GPIO_Touched(void) {
 
 void led_on(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); }
 
-void led_off(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); }
+void led_off(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET); }
 
 void device_periodic_task(void) {
   static uint32_t deassert_at = ~0u;
   uint32_t tick = HAL_GetTick();
-  if (tick > blinking_until) {
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, cfg_is_led_normally_on());
-  } else {
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((tick >> 9) & 1));
-  }
   if (GPIO_Touched()) {
     set_touch_result(TOUCH_SHORT);
     deassert_at = tick + 2000;
@@ -108,6 +103,7 @@ void device_periodic_task(void) {
     set_touch_result(TOUCH_NO);
     deassert_at = ~0u;
   }
+  device_update_led();
 }
 
 void fm_nss_low(void) { HAL_GPIO_WritePin(FM_SSN_GPIO_Port, FM_SSN_Pin, GPIO_PIN_RESET); }

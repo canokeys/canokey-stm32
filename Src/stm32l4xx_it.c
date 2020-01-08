@@ -207,7 +207,7 @@ void SysTick_Handler(void)
     static uint32_t cnt = 0;
     cnt++;
     if (cnt % 128 == 0) {
-      // device_periodic_task();
+      device_periodic_task();
     }
   }
   /* USER CODE END SysTick_IRQn 1 */
