@@ -36,7 +36,9 @@ Build steps:
 # in the top-level folder
 mkdir build
 cd build
-cmake -DCROSS_COMPILE=<path-to-toolchain>/bin/arm-none-eabi- -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCROSS_COMPILE=<path-to-toolchain>/bin/arm-none-eabi- \
+    -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake \
+    -DCMAKE_BUILD_TYPE=Release ..
 make canokey.bin
 ```
 
@@ -48,14 +50,14 @@ Prerequisites:
 
 - Linux OS with pcscd, pcsc_scan and scriptor installed
 
-Connect the Canokey to PC, a USB CCID device should show up. The `pcsc_scan` command should be able to detect a smart card:
+Connect the Canokey to PC, an USB CCID device should show up. The `pcsc_scan` command should be able to detect a smart card:
 
 ```
 $ pcsc_scan
 TODO: output
 ```
 
-If everything works, initialize the Canokey by running `./init-fido-demo.sh`. This script will set admin PIN to `123456`, set serial number to current timestamp, and write an attestation certificate used by FIDO. Refer to [admin doc](https://canokeys.github.io/doc/development/protocols/admin/) if you want to customize these values.
+Then, initialize the Canokey by running `./init-fido-demo.sh`. This script will set admin PIN to `123456`, set serial number to current timestamp, and write an attestation certificate used by FIDO. Refer to [admin doc](https://canokeys.github.io/doc/development/protocols/admin/) if you want to customize these values.
 
 ```
 $ ./init-fido-demo.sh
