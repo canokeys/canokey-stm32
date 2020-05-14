@@ -140,7 +140,7 @@ void usb_resources_alloc(void) {
     DBG_MSG("Keyboard interface enabled, Iface %u\n", iface);
     EP_TABLE.kbd_hid = ep;
     IFACE_TABLE.kbd_hid = iface;
-    IFACE_TABLE.kbd_hid = 8;
+    EP_SIZE_TABLE.kbd_hid = 8;
   }
 }
 
