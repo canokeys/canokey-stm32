@@ -354,7 +354,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
 
-  uint8_t in_nfc_mode = nfc_has_rf();
+  uint8_t in_nfc_mode = 0;  // should detect by the device
   set_nfc_state(in_nfc_mode);
   if (in_nfc_mode)
     nfc_init();
