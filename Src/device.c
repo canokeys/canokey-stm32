@@ -11,7 +11,9 @@ const uint32_t UNTOUCHED_MAX_VAL = 10; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
 TIM_HandleTypeDef htim6;
 
+static volatile uint32_t blinking_until;
 static uint16_t touch_threshold = 5, measure_touch;
+static uint8_t has_rf;
 static void (*tim_callback)(void);
 
 void device_delay(int ms) { HAL_Delay(ms); }
@@ -41,6 +43,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     tim_callback();
   }
 }
+
+void set_nfc(uint8_t val) { has_rf = val; }
+
+uint8_t is_nfc(void) { return has_rf; }
 
 void GPIO_Touch_Calibrate(void) {
   uint32_t sum = 0;
@@ -84,6 +90,11 @@ static GPIO_PinState GPIO_Touched(void) {
 void device_periodic_task(void) {
   static uint32_t deassert_at = ~0u;
   uint32_t tick = HAL_GetTick();
+  if (tick > blinking_until) {
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, cfg_is_led_normally_on());
+  } else {
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ((tick >> 9) & 1));
+  }
   if (GPIO_Touched()) {
     set_touch_result(TOUCH_SHORT);
     deassert_at = tick + 2000;
@@ -95,13 +106,17 @@ void device_periodic_task(void) {
   }
 }
 
-void led_on(void) {
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 1);
-}
+void device_start_blinking(uint8_t sec) {
+  if (!sec) {
+    blinking_until = ~0u;
+    DBG_MSG("Start blinking\n");
+  } else {
+    blinking_until = HAL_GetTick() + sec * 1000u;
+    DBG_MSG("Start blinking until %u\n", blinking_until);
+  }
+};
 
-void led_off(void) {
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 0);
-}
+void device_stop_blinking(void) { blinking_until = 0; }
 
 /* Override the function defined in usb_device.c */
 void usb_resources_alloc(void) {
