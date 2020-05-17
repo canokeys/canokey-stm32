@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "device-stm32.h"
 #include "lfs_init.h"
+#include "git-rev.h"
 #include <admin.h>
 #include <ccid.h>
 #include <ctap.h>
@@ -43,7 +44,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define VENDOR_NFC_SET 0x01
+#define VENDOR_NFC_GET 0x02
+#define VENDOR_RDP 0x55
+#define VENDOR_DFU 0x22
+#define VENDOR_RESUME_LOADER 0xFF
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -205,13 +210,39 @@ void EnterDFUBootloader() {
 }
 
 // override the function defined in admin.c
+int admin_vendor_version(const CAPDU *capdu, RAPDU *rapdu) {
+  UNUSED(capdu);
+
+  size_t len = strlen(GIT_REV);
+  memcpy(RDATA, GIT_REV, len);
+  memcpy(RDATA + len, "-O", 2);
+  LL = len + 2;
+  if (LL > LE) LL = LE;
+
+  return 0;
+}
+
 int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
-  if (P1 == 0x00 && P2 == 0x00) {
-    size_t len = strnlen(fw_git_version, LE);
-    LL = len;
-    memcpy(RDATA, fw_git_version, len);
-    return 0;
-  } else if (P1 == 0x55) {
+  uint16_t addr;
+
+  switch (P1) {
+  case VENDOR_NFC_SET:
+    if (LC <= 2) EXCEPT(SW_WRONG_LENGTH);
+    addr = (DATA[0] << 8) | DATA[1];
+    if (addr < 0x000C || addr > 0x03CF) EXCEPT(SW_WRONG_DATA);
+    if (LC > 18) EXCEPT(SW_WRONG_LENGTH);
+    fm_write_eeprom(addr, DATA + 2, LC - 2);
+    break;
+
+  case VENDOR_NFC_GET:
+    if (LC != 2) EXCEPT(SW_WRONG_LENGTH);
+    addr = (DATA[0] << 8) | DATA[1];
+    if (addr > 0x03CF) EXCEPT(SW_WRONG_DATA);
+    fm_read_eeprom(addr, RDATA, LE);
+    LL = LE;
+    break;
+
+  case VENDOR_RDP:
     DBG_MSG("Enable RDP level %d\n", (int)P2);
     if (P2 == 1)
       EnableRDP(OB_RDP_LEVEL_1);
@@ -219,18 +250,21 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
       EnableRDP(OB_RDP_LEVEL_2);
     else
       EXCEPT(SW_WRONG_P1P2);
-    return 0;
-  } else if (P1 == 0x22 && P2 == 0x22) {
+    break;
+
+  case VENDOR_DFU:
+    if (P2 != VENDOR_DFU) EXCEPT(SW_WRONG_P1P2);
     DBG_MSG("Entering DFU\n");
     EnterDFUBootloader();
     ERR_MSG("Failed to enter DFU\n");
     for (;;)
       ;
-  } else if (P1 == 0xFF) {
-    HAL_Delay(1000);
-    return 0;
+
+  default:
+    EXCEPT(SW_WRONG_P1P2);
   }
-  EXCEPT(SW_WRONG_P1P2);
+
+  return 0;
 }
 
 void SystemClock_Config_16M(void) {
@@ -273,7 +307,7 @@ void SystemClock_Config_80M(void) {
   RCC_CRSInitTypeDef RCC_CRSInitStruct = {0};
 
   /** Changes SYSCLKSource to MSI */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
@@ -318,21 +352,20 @@ void SystemClock_Config_80M(void) {
 
   HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
 
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  if (HAL_SPI_DeInit(&hspi1) != HAL_OK) Error_Handler();
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   if (HAL_SPI_Init(&hspi1) != HAL_OK) Error_Handler();
 }
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -354,7 +387,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
 
-  uint8_t in_nfc_mode = 0;  // should detect by the device
+  uint8_t in_nfc_mode = 0; // should detect by the device
   set_nfc_state(in_nfc_mode);
   if (in_nfc_mode)
     nfc_init();
@@ -407,12 +440,11 @@ int main(void)
 }
 
 /**
-  * @brief RNG Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RNG_Init(void)
-{
+ * @brief RNG Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_RNG_Init(void) {
 
   /* USER CODE BEGIN RNG_Init 0 */
 
@@ -422,23 +454,20 @@ static void MX_RNG_Init(void)
 
   /* USER CODE END RNG_Init 1 */
   hrng.Instance = RNG;
-  if (HAL_RNG_Init(&hrng) != HAL_OK)
-  {
+  if (HAL_RNG_Init(&hrng) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN RNG_Init 2 */
 
   /* USER CODE END RNG_Init 2 */
-
 }
 
 /**
-  * @brief SPI1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI1_Init(void)
-{
+ * @brief SPI1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI1_Init(void) {
 
   /* USER CODE BEGIN SPI1_Init 0 */
 
@@ -462,8 +491,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CRCPolynomial = 7;
   hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
+  if (HAL_SPI_Init(&hspi1) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN SPI1_Init 2 */
@@ -472,12 +500,11 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART2_UART_Init(void) {
 
   /* USER CODE BEGIN USART2_Init 0 */
 
@@ -496,23 +523,20 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
+  if (HAL_UART_Init(&huart2) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
@@ -555,7 +579,6 @@ static void MX_GPIO_Init(void)
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
 }
 
 /* USER CODE BEGIN 4 */
@@ -567,27 +590,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   ERR_MSG("in");
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(char *file, uint32_t line)
-{ 
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(char *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
