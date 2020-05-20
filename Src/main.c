@@ -25,8 +25,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "device-stm32.h"
-#include "lfs_init.h"
 #include "git-rev.h"
+#include "lfs_init.h"
 #include <admin.h>
 #include <ccid.h>
 #include <ctap.h>
@@ -35,6 +35,7 @@
 #include <oath.h>
 #include <openpgp.h>
 #include <piv.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -356,6 +357,28 @@ void SystemClock_Config_80M(void) {
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   if (HAL_SPI_Init(&hspi1) != HAL_OK) Error_Handler();
 }
+
+uint8_t detect_usb(void) {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitStruct.Pin = GPIO_PIN_12; // USB_DP
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  for (int i = 0; i < 1000; i++) {
+    if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12) == 0) return 1;
+
+    for (int j = 0; j < 100; ++j)
+      asm volatile("nop");
+  }
+
+  // time out
+
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  return 0;
+}
 /* USER CODE END 0 */
 
 /**
@@ -388,6 +411,9 @@ int main(void) {
   MX_SPI1_Init();
 
   uint8_t in_nfc_mode = 0; // should detect by the device
+  uint32_t det_begin = HAL_GetTick();
+  in_nfc_mode = !detect_usb();
+  det_begin = HAL_GetTick() - det_begin;
   set_nfc_state(in_nfc_mode);
   if (in_nfc_mode)
     nfc_init();
@@ -399,7 +425,7 @@ int main(void) {
   MX_USART2_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
-  DBG_MSG("Mode: %s\n", in_nfc_mode ? "NFC" : "USB");
+  DBG_MSG("Mode: %s (%u ms)\n", in_nfc_mode ? "NFC" : "USB", det_begin);
 
   DBG_MSG("Init FS\n");
   littlefs_init();
