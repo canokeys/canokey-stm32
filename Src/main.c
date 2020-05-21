@@ -49,7 +49,6 @@
 #define VENDOR_NFC_GET 0x02
 #define VENDOR_RDP 0x55
 #define VENDOR_DFU 0x22
-#define VENDOR_RESUME_LOADER 0xFF
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
