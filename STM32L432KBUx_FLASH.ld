@@ -63,8 +63,8 @@ _stack_boundary = _estack - _Min_Stack_Size;
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 181K
-LFS (rx)      : ORIGIN = 0x8028000, LENGTH = 75K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 160K
+LFS (rx)      : ORIGIN = 0x8028000, LENGTH = 96K
 }
 
 /* Define output sections */
