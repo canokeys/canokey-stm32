@@ -20,9 +20,6 @@ aux_source_directory(Drivers/STM32L4xx_HAL_Driver/Src SOURCE_CODE_BOARD)
 add_executable(canokey ${SOURCE_CODE_COMMON} ${SOURCE_CODE_BOARD} ${STARTUP_ASM_FILE})
 target_link_libraries(canokey PRIVATE canokey-core c m nosys)
 
-# Enable LTO
-set_property(TARGET canokey PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
-
 target_compile_definitions(canokey PRIVATE USE_HAL_DRIVER USE_FULL_LL_DRIVER STM32L432xx)
 if (ENABLE_DEBUG_OUTPUT)
     target_compile_definitions(canokey PRIVATE DEBUG_OUTPUT)
