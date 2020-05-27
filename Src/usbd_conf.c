@@ -27,6 +27,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "usb_device.h"
+#include "device-config.h"
 #include "usbd_ccid.h"
 #include "usbd_ctaphid.h"
 #include "usbd_kbdhid.h"
@@ -345,9 +346,9 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 #define SIZE_OF_BTABLE(nEndpoints) ((nEndpoints)<<3)
   uint32_t PMA_addr = SIZE_OF_BTABLE(4);
   HAL_PCDEx_PMAConfig(&hpcd_USB_FS , 0x00 , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += 0x40;
+  PMA_addr += USB_MAX_EP0_SIZE;
   HAL_PCDEx_PMAConfig(&hpcd_USB_FS , 0x80 , PCD_SNG_BUF, PMA_addr);
-  PMA_addr += 0x40;
+  PMA_addr += USB_MAX_EP0_SIZE;
   /* USER CODE END EndPoint_Configuration */
   /* USER CODE BEGIN EndPoint_Configuration_CUSTOM_HID */
   if (EP_OUT(ccid) != 0xFF) {

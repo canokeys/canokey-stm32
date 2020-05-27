@@ -13,6 +13,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-specs=nano.specs -T${MCU_LINKER_SCRIPT} -Wl,-Map=la
 set(CMAKE_C_FLAGS_RELEASE "-Os -g3")
 
 add_definitions(-DMBEDTLS_CONFIG_FILE="${CMAKE_SOURCE_DIR}/Inc/mbedtls-config.h")
+add_definitions(-DDEVICE_CONFIG_FILE="${CMAKE_SOURCE_DIR}/Inc/device-config.h")
 add_subdirectory(canokey-core)
 
 aux_source_directory(Src SOURCE_CODE_COMMON)
