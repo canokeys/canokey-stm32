@@ -357,12 +357,6 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(ccid), PCD_SNG_BUF, PMA_addr);
     PMA_addr += EP_SIZE(ccid);
   }
-  if (EP_OUT(openpgp) != 0xFF) {
-    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(openpgp), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += EP_SIZE(openpgp);
-    HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_OUT(openpgp), PCD_SNG_BUF, PMA_addr);
-    PMA_addr += EP_SIZE(openpgp);
-  }
   if (EP_OUT(ctap_hid) != 0xFF) {
     HAL_PCDEx_PMAConfig(&hpcd_USB_FS, EP_IN(ctap_hid), PCD_SNG_BUF, PMA_addr);
     PMA_addr += EP_SIZE(ctap_hid);
