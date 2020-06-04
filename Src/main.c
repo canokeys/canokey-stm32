@@ -267,7 +267,8 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
   return 0;
 }
 
-void SystemClock_Config_16M(void) {
+// Initial system clock profile, 40MHz currently
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -280,10 +281,10 @@ void SystemClock_Config_16M(void) {
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 32;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV8;
+  RCC_OscInitStruct.PLL.PLLN = 20;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV30; // SAI unused
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
 
   /** Initializes the CPU, AHB and APB busses clocks  */
@@ -300,6 +301,7 @@ void SystemClock_Config_16M(void) {
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) Error_Handler();
 }
 
+// High-pref system clock profile
 void SystemClock_Config_80M(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -392,9 +394,10 @@ int main(void) {
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config_16M();
+  SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -431,7 +434,7 @@ int main(void) {
     /* USER CODE BEGIN 3 */
     if (in_nfc_mode) {
       nfc_loop();
-      if(detect_usb()) {
+      if (detect_usb()) {
         DBG_MSG("Init USB\n");
         SystemClock_Config_80M();
         MX_USART2_UART_Init(); // re-config the baudrate counter
