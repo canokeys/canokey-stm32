@@ -364,14 +364,7 @@ uint8_t detect_usb(void) {
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  for (int i = 0; i < 1000; i++) {
-    if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12) == 0) return 1;
-
-    for (int j = 0; j < 100; ++j)
-      asm volatile("nop");
-  }
-
-  // time out
+  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12) == 0) return 1;
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -408,23 +401,14 @@ int main(void) {
   // We first initialize GPIO & SPI to detect NFC field
   MX_GPIO_Init();
   MX_SPI1_Init();
-
-  uint8_t in_nfc_mode = 0; // should detect by the device
-  uint32_t det_begin = HAL_GetTick();
-  in_nfc_mode = !detect_usb();
-  det_begin = HAL_GetTick() - det_begin;
-  set_nfc_state(in_nfc_mode);
-  if (in_nfc_mode)
-    nfc_init();
-  else
-    SystemClock_Config_80M();
-
   // Then initialize other peripherals
   MX_RNG_Init();
   MX_USART2_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
-  DBG_MSG("Mode: %s (%u ms)\n", in_nfc_mode ? "NFC" : "USB", det_begin);
+  uint8_t in_nfc_mode = 1; // boot in NFC mode by default
+  nfc_init();
+  set_nfc_state(in_nfc_mode);
 
   DBG_MSG("Init FS\n");
   littlefs_init();
@@ -435,12 +419,6 @@ int main(void) {
   piv_install(0);
   oath_install(0);
   ctap_install(0);
-
-  if (!in_nfc_mode) {
-    DBG_MSG("Init USB\n");
-    usb_device_init();
-    device_loop_enable = 1;
-  }
 
   DBG_MSG("Main Loop\n");
   /* USER CODE END 2 */
@@ -453,6 +431,16 @@ int main(void) {
     /* USER CODE BEGIN 3 */
     if (in_nfc_mode) {
       nfc_loop();
+      if(detect_usb()) {
+        DBG_MSG("Init USB\n");
+        SystemClock_Config_80M();
+        MX_USART2_UART_Init(); // re-config the baudrate counter
+        usb_device_init();
+        // enable the device_periodic_task, which controls LED and Touch sensing
+        device_loop_enable = 1;
+        in_nfc_mode = 0;
+        set_nfc_state(in_nfc_mode);
+      }
     } else {
       if ((i & ((1 << 23) - 1)) == 0) {
         DBG_MSG("Touch calibrating...\n");

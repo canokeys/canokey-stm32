@@ -30,7 +30,7 @@ void device_set_timeout(void (*callback)(void), uint16_t timeout) {
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 7999;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if (is_nfc())
+  if (is_nfc()) // TODO：calc the period by Sysclk
     htim6.Init.Period = 2 * timeout - 1;
   else
     htim6.Init.Period = 10 * timeout - 1;
