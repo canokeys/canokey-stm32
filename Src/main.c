@@ -67,6 +67,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
 uint32_t device_loop_enable;
+static uint8_t variant;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -210,7 +211,31 @@ void EnterDFUBootloader() {
   JumpToApplication();
 }
 
-// override the function defined in admin.c
+// override functions defined in admin.c
+
+int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
+  UNUSED(capdu);
+
+  const char *s;
+  static const char * const hw_variant_str[] = {
+      [CANOKEY_STM32L4_EARLY_ES] = "Canokey ES",
+      [CANOKEY_STM32L4_USBA_NFC_R3] = "Canokey NFC USB-A rev.3",
+      [CANOKEY_STM32L4_USBA_NANO_R2] = "Canokey Nano USB-A rev.2",
+  };
+
+  if (variant >= sizeof(hw_variant_str) / sizeof(const char *) || !hw_variant_str[variant])
+    s = "Error";
+  else
+    s = hw_variant_str[variant];
+
+  size_t len = strlen(s);
+  memcpy(RDATA, s, len);
+  LL = len;
+  if (LL > LE) LL = LE;
+
+  return 0;
+}
+
 int admin_vendor_version(const CAPDU *capdu, RAPDU *rapdu) {
   UNUSED(capdu);
 
@@ -410,7 +435,7 @@ int main(void) {
   MX_USART2_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
-  uint8_t variant = stm32_hw_variant_probe();
+  variant = stm32_hw_variant_probe();
   uint8_t in_nfc_mode;
   if (variant == CANOKEY_STM32L4_USBA_NANO_R2) {
     // w/o NFC front-end chip
