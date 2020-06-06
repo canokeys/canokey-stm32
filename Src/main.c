@@ -24,6 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "device-config.h"
 #include "device-stm32.h"
 #include "git-rev.h"
 #include "lfs_init.h"
@@ -409,8 +410,16 @@ int main(void) {
   MX_USART2_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
-  uint8_t in_nfc_mode = 1; // boot in NFC mode by default
-  nfc_init();
+  uint8_t variant = stm32_hw_variant_probe();
+  uint8_t in_nfc_mode;
+  if (variant == CANOKEY_STM32L4_USBA_NANO_R2) {
+    // w/o NFC front-end chip
+    in_nfc_mode = 0;
+  } else {
+    // with NFC front-end chip
+    nfc_init();
+    in_nfc_mode = 1; // boot in NFC mode by default
+  }
   set_nfc_state(in_nfc_mode);
 
   DBG_MSG("Init FS\n");
@@ -423,7 +432,7 @@ int main(void) {
   oath_install(0);
   ctap_install(0);
 
-  DBG_MSG("Main Loop\n");
+  DBG_MSG("Main Loop, HW %u\n", (unsigned int)variant);
   /* USER CODE END 2 */
 
   /* Infinite loop */

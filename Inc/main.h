@@ -69,7 +69,11 @@ extern const char *fw_git_version;
 #define TOUCH_Pin GPIO_PIN_3
 #define TOUCH_GPIO_Port GPIOH
 /* USER CODE BEGIN Private defines */
-
+#define HW_CFG_Port GPIOB
+#define HW_CFG0_Pin GPIO_PIN_4
+#define HW_CFG1_Pin GPIO_PIN_5
+#define HW_CFG2_Pin GPIO_PIN_6
+#define HW_CFG3_Pin GPIO_PIN_7
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

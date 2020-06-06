@@ -1,3 +1,4 @@
+#include "device-config.h"
 #include "main.h"
 #include "stm32l4xx_ll_gpio.h"
 #include "stm32l4xx_ll_tim.h"
@@ -113,6 +114,43 @@ void fm_nss_high(void) { HAL_GPIO_WritePin(FM_SSN_GPIO_Port, FM_SSN_Pin, GPIO_PI
 void fm_transmit(uint8_t *buf, uint8_t len) { HAL_SPI_Transmit(&FM_SPI, buf, len, 1000); }
 
 void fm_receive(uint8_t *buf, uint8_t len) { HAL_SPI_Receive(&FM_SPI, buf, len, 1000); }
+
+static bool hwcfg_set_and_probe(uint16_t out, uint16_t in) {
+  HAL_GPIO_WritePin(HW_CFG_Port, out, 0);
+  for (int i = 0; i < 10; ++i)
+    asm volatile("nop");
+  bool conn = HAL_GPIO_ReadPin(HW_CFG_Port, in) == 0;
+  HAL_GPIO_WritePin(HW_CFG_Port, out, 1);
+  return conn;
+}
+
+uint8_t stm32_hw_variant_probe(void) {
+#define N_CFGPIN 4
+  uint16_t cfg_pins[N_CFGPIN] = {HW_CFG0_Pin, HW_CFG1_Pin, HW_CFG2_Pin, HW_CFG3_Pin};
+  uint8_t result = CANOKEY_STM32L4_EARLY_ES;
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  for (int i = 0; i < N_CFGPIN; i++) {
+    GPIO_InitStruct.Pin = cfg_pins[i];
+    HAL_GPIO_Init(HW_CFG_Port, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(HW_CFG_Port, cfg_pins[i], 1);
+  }
+
+  if (hwcfg_set_and_probe(cfg_pins[0], cfg_pins[1]))
+    result = CANOKEY_STM32L4_USBA_NANO_R2;
+  else if (hwcfg_set_and_probe(cfg_pins[2], cfg_pins[3]))
+    result = CANOKEY_STM32L4_USBA_NFC_R3;
+
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  for (int i = 0; i < N_CFGPIN; i++) {
+    GPIO_InitStruct.Pin = cfg_pins[i];
+    HAL_GPIO_Init(HW_CFG_Port, &GPIO_InitStruct);
+  }
+  return result;
+}
 
 /* Override the function defined in usb_device.c */
 void usb_resources_alloc(void) {
