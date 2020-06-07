@@ -1,4 +1,6 @@
 # Canokey on STM32
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32?ref=badge_shield)
+
 
 Canokey is an open-source USB security token, providing the following functions:
 
@@ -84,3 +86,7 @@ Major hardware-dependent components in this repo:
 - `Src/lfs_init.c`: Flash operations used by file system
 - `Src/main.c`: Hardware initialization
 - `Src/usbd_conf.c`: USB interface
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32?ref=badge_large)
