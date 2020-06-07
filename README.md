@@ -1,6 +1,6 @@
-# Canokey on STM32
+# CanoKey on STM32
 
-Canokey is an open-source USB security token, providing the following functions:
+CanoKey is an open-source USB security token, providing the following functions:
 
 - OpenPGP Card V3.4 (RSA, ECDSA, ED25519 supported)
 - PIV Card
@@ -12,16 +12,17 @@ It works on modern Linux/Windows/macOS operating systems without additional driv
 
 ## Hardware
 
-Current implementation is based on STM32L423KC MCU, which features a Cortex-M4 processor, 256KB Flash, 64 KB SRAM, and a full-speed USB controller. For demonstration purposes, you may run this project on the [NUCLEO-L432KC](https://os.mbed.com/platforms/ST-Nucleo-L432KC/) development board with the following hardware connection:
+Current implementation is based on STM32L423KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. For demonstration purposes, you may run this project on the [NUCLEO-L432KC](https://os.mbed.com/platforms/ST-Nucleo-L432KC/) development board with the following hardware connection:
 
-- D2(PA12) <-> USB D+
-- D10(PA11) <-> USB D-
+- D2 (PA12) <-> USB D+
+- D10 (PA11) <-> USB D-
 - GND <-> USB GND
 - 5V <-> USB Power
 
-The microUSB port on board is for ST-LINK, do not confuse it with USB signal pins.
+The micro USB port on board is for ST-LINK, do not confuse it with USB signal pins.
 
-## Build the Firmware
+## Build and test
+### Build the Firmware
 
 Prerequisites:
 
@@ -42,9 +43,9 @@ cmake -DCROSS_COMPILE=<path-to-toolchain>/bin/arm-none-eabi- \
 make canokey.bin
 ```
 
-Then download the firmware file `canokey.bin` to the STM32 with flash programming tools.
+Then download the firmware file `canokey.bin` to the STM32 with flash programming tools (e.g., ST-Link Utility if you use the NUCLEO-L432KC, or the [dfu-util](https://github.com/z4yx/dfu-util), or the [WebDFU](https://dfu.canokeys.org)).
 
-## Initialize and Test
+### Initialize and Test
 
 Prerequisites:
 
@@ -69,11 +70,11 @@ After initialization, you are free to use Canokey with applications, such as:
 - GPG, e.g. `gpg --card-status`
 - SSH pkcs11
 - piv-tool
-- Websites with U2F enabled, e.g. https://github.com/settings/security
-- Websites with WebAuthn enabled, e.g. https://webauthn.me/
+- Websites with U2F enabled, e.g., https://github.com/settings/security
+- Websites with WebAuthn enabled, e.g., https://webauthn.me/
 - TOTP dashboard (under development)
 
-## Internals
+### Internals
 
 The hardware-independent code (including applets, storage, cryptography and USB stack) is in a submodule named [canokey-core](https://github.com/canokeys/canokey-core).
 
@@ -84,3 +85,17 @@ Major hardware-dependent components in this repo:
 - `Src/lfs_init.c`: Flash operations used by file system
 - `Src/main.c`: Hardware initialization
 - `Src/usbd_conf.c`: USB interface
+
+## Documentation
+
+Check out our official [documentation](https://doc.canokeys.org).
+
+## License
+
+All software, unless otherwise noted, is licensed under Apache 2.0.
+
+Unless you explicitly state, otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license without any additional terms or conditions.
+
+All hardware, unless otherwise noted, is dual licensed under CERN and CC-BY-SA. You may use CanoKey hardware under the terms of either the CERN 1.2 license or CC-BY-SA 4.0 license.
+
+All documentation, unless otherwise noted, is licensed under CC-BY-SA. You may use CanoKey documentation under the terms of the CC-BY-SA 4.0 license
