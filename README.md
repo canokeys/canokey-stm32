@@ -1,6 +1,6 @@
 # CanoKey on STM32
 
-CanoKey is an open-source USB security token, providing the following functions:
+CanoKey is an open-source USB/NFC security token, providing the following functions:
 
 - OpenPGP Card V3.4 (RSA, ECDSA, ED25519 supported)
 - PIV Card
@@ -12,14 +12,23 @@ It works on modern Linux/Windows/macOS operating systems without additional driv
 
 ## Hardware
 
-Current implementation is based on STM32L423KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. For demonstration purposes, you may run this project on the [NUCLEO-L432KC](https://os.mbed.com/platforms/ST-Nucleo-L432KC/) development board with the following hardware connection:
+Current Canokey implementation is based on STM32L423KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. 
+
+### Canokey NFC-A
+
+This official hardware design features a USB Type-A plug, NFC antenna and touch sensing. It's an open-source hardware design. Schematics and PCB design files are published at [canokey-hardware](https://github.com/canokeys/canokey-hardware).
+
+### NUCLEO-L432KC (Development Board)
+For demonstration purposes, you may run this project on the [NUCLEO-L432KC](https://os.mbed.com/platforms/ST-Nucleo-L432KC/) development board with the following hardware connection:
 
 - D2 (PA12) <-> USB D+
 - D10 (PA11) <-> USB D-
 - GND <-> USB GND
 - 5V <-> USB Power
 
-The micro USB port on board is for ST-LINK, do not confuse it with USB signal pins.
+The NFC and touch sensing functions are unavailable on NUCLEO board.
+
+**The micro USB port on board connects to ST-LINK. Do not confuse it with USB signal pins of MCU.**
 
 ## Build and test
 ### Build the Firmware
@@ -58,7 +67,7 @@ $ pcsc_scan
 TODO: output
 ```
 
-Then, initialize the Canokey by running `./init-fido-demo.sh`. This script will set admin PIN to `123456`, set serial number to current timestamp, and write an attestation certificate used by FIDO. Refer to [admin doc](https://canokeys.github.io/doc/development/protocols/admin/) if you want to customize these values.
+Then, initialize the Canokey by running `./init-fido-demo.sh`. This script will set admin PIN to `123456`, set serial number to current timestamp, and write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these values.
 
 ```
 $ ./init-fido-demo.sh
