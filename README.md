@@ -1,5 +1,5 @@
 # Canokey on STM32
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32?ref=badge_shield)
+[![Build Status](https://travis-ci.com/canokeys/canokey-stm32.svg?branch=master)](https://travis-ci.com/canokeys/canokey-stm32) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32?ref=badge_shield)
 
 CanoKey is an open-source USB/NFC security token, providing the following functions:
 
