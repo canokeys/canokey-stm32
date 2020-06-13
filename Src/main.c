@@ -219,8 +219,8 @@ int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
   const char *s;
   static const char * const hw_variant_str[] = {
       [CANOKEY_STM32L4_EARLY_ES] = "Canokey ES",
-      [CANOKEY_STM32L4_USBA_NFC_R3] = "Canokey NFC USB-A rev.3",
-      [CANOKEY_STM32L4_USBA_NANO_R2] = "Canokey Nano USB-A rev.2",
+      [CANOKEY_STM32L4_USBA_NFC_R3] = "Canokey NFC-A",
+      [CANOKEY_STM32L4_USBA_NANO_R2] = "Canokey Nano-A",
   };
 
   if (variant >= sizeof(hw_variant_str) / sizeof(const char *) || !hw_variant_str[variant])
