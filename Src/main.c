@@ -217,7 +217,7 @@ int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
   UNUSED(capdu);
 
   const char *s;
-  static const char * const hw_variant_str[] = {
+  static const char *const hw_variant_str[] = {
       [CANOKEY_STM32L4_EARLY_ES] = "Canokey ES",
       [CANOKEY_STM32L4_USBA_NFC_R3] = "Canokey NFC-A",
       [CANOKEY_STM32L4_USBA_NANO_R2] = "Canokey Nano-A",
@@ -399,6 +399,15 @@ uint8_t detect_usb(void) {
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   return 0;
 }
+
+static void config_usb_mode(void) {
+  DBG_MSG("Init USB\n");
+  SystemClock_Config_80M();
+  MX_USART2_UART_Init(); // re-config the baudrate counter
+  usb_device_init();
+  // enable the device_periodic_task, which controls LED and Touch sensing
+  device_loop_enable = 1;
+}
 /* USER CODE END 0 */
 
 /**
@@ -439,6 +448,7 @@ int main(void) {
   uint8_t in_nfc_mode;
   if (variant == CANOKEY_STM32L4_USBA_NANO_R2) {
     // w/o NFC front-end chip
+    config_usb_mode();
     in_nfc_mode = 0;
   } else {
     // with NFC front-end chip
@@ -468,13 +478,8 @@ int main(void) {
     /* USER CODE BEGIN 3 */
     if (in_nfc_mode) {
       nfc_loop();
-      if (detect_usb()) {
-        DBG_MSG("Init USB\n");
-        SystemClock_Config_80M();
-        MX_USART2_UART_Init(); // re-config the baudrate counter
-        usb_device_init();
-        // enable the device_periodic_task, which controls LED and Touch sensing
-        device_loop_enable = 1;
+      if (detect_usb()) { // USB plug-in
+        config_usb_mode();
         in_nfc_mode = 0;
         set_nfc_state(in_nfc_mode);
       }
