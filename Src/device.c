@@ -142,6 +142,8 @@ uint8_t stm32_hw_variant_probe(void) {
     result = CANOKEY_STM32L4_USBA_NANO_R2;
   else if (hwcfg_set_and_probe(cfg_pins[2], cfg_pins[3]))
     result = CANOKEY_STM32L4_USBA_NFC_R3;
+  else if (hwcfg_set_and_probe(cfg_pins[1], cfg_pins[3]))
+    result = CANOKEY_STM32L4_USBC_NFC_R1;
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
