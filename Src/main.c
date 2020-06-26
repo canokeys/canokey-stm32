@@ -417,6 +417,7 @@ static void config_usb_mode(void) {
  */
 int main(void) {
   /* USER CODE BEGIN 1 */
+  uint8_t in_nfc_mode;
 
   /* USER CODE END 1 */
 
@@ -446,16 +447,8 @@ int main(void) {
   SetupMPU();
   /* USER CODE BEGIN 2 */
   variant = stm32_hw_variant_probe();
-  uint8_t in_nfc_mode;
-  if (variant == CANOKEY_STM32L4_USBA_NANO_R2) {
-    // w/o NFC front-end chip
-    config_usb_mode();
-    in_nfc_mode = 0;
-  } else {
-    // with NFC front-end chip
-    nfc_init();
-    in_nfc_mode = 1; // boot in NFC mode by default
-  }
+  in_nfc_mode = 1; // boot in NFC mode by default
+  nfc_init();
   set_nfc_state(in_nfc_mode);
 
   DBG_MSG("Init FS\n");
