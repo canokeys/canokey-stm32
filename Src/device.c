@@ -180,6 +180,16 @@ void usb_resources_alloc(void) {
   }
 }
 
+int device_atomic_compare_and_swap(volatile uint32_t *var, uint32_t expect, uint32_t update) {
+  int status = 0;
+  do {
+    if (__LDREXW(var) != expect) return -1;
+    status = __STREXW(update, var); // Try to set
+  } while (status != 0);            // retry until updated
+  __DMB();                          // Do not start any other memory access
+  return 0;
+}
+
 // ARM Cortex-M Programming Guide to Memory Barrier Instructions,	Application Note 321
 
 int device_spinlock_lock(volatile uint32_t *lock, uint32_t blocking) {
