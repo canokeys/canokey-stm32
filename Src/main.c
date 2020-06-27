@@ -466,7 +466,7 @@ int main(void) {
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  for (uint32_t i = 0;; ++i) {
+  for (uint32_t i = 0;; ) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -483,6 +483,7 @@ int main(void) {
         GPIO_Touch_Calibrate();
       }
       device_loop(1);
+      ++i;
     }
   }
   /* USER CODE END 3 */

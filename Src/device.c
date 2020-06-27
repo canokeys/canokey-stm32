@@ -8,14 +8,14 @@
 
 /* This file overrides functions defined in canokey-core/src/device.c */
 
-const uint32_t UNTOUCHED_MAX_VAL = 10; /* Suitable for 56K pull-down resistor */
+const uint32_t UNTOUCHED_MAX_VAL = 40; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
 
 TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
 
 static volatile uint32_t blinking_until;
-static uint16_t touch_threshold = 5, measure_touch;
+static uint16_t touch_threshold = 14, measure_touch;
 static void (*tim_callback)(void);
 
 void device_delay(int ms) { HAL_Delay(ms); }
@@ -65,7 +65,7 @@ void GPIO_Touch_Calibrate(void) {
     // DBG_MSG("val %u\n", sum);
   }
   if (sum == UNTOUCHED_MAX_VAL * CALI_TIMES) {
-    DBG_MSG("max limit exceeded, discard...\n");
+    DBG_MSG("max limit exceeded, discarded. touch_threshold %u\n", touch_threshold);
     return;
   }
 
