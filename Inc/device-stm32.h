@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 #pragma once
 
 void GPIO_Touch_Calibrate(void);

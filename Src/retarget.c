@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 #include "main.h"
 #include "stm32l4xx_ll_usart.h"
 extern UART_HandleTypeDef DBG_UART;
