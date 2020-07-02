@@ -254,17 +254,27 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
 
   switch (P1) {
   case VENDOR_NFC_SET:
-    if (LC <= 2) EXCEPT(SW_WRONG_LENGTH);
+#define NFC_SET_MAX_LEN 18
+    if (LC <= 2 || LC > NFC_SET_MAX_LEN) EXCEPT(SW_WRONG_LENGTH);
+
     addr = (DATA[0] << 8) | DATA[1];
     if (addr < 0x000C || addr > 0x03CF) EXCEPT(SW_WRONG_DATA);
-    if (LC > 18) EXCEPT(SW_WRONG_LENGTH);
+
     fm_write_eeprom(addr, DATA + 2, LC - 2);
+    if (P2 == 1) { // verification enabled
+      uint8_t *readback_buf = DATA + NFC_SET_MAX_LEN;
+      device_delay(10);
+      fm_read_eeprom(addr, readback_buf, LC - 2);
+      if (memcmp(DATA + 2, readback_buf, LC - 2)) EXCEPT(SW_CHECKING_ERROR);
+    }
     break;
 
   case VENDOR_NFC_GET:
     if (LC != 2) EXCEPT(SW_WRONG_LENGTH);
+
     addr = (DATA[0] << 8) | DATA[1];
     if (addr > 0x03CF) EXCEPT(SW_WRONG_DATA);
+
     fm_read_eeprom(addr, RDATA, LE);
     LL = LE;
     break;
@@ -466,7 +476,7 @@ int main(void) {
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  for (uint32_t i = 0;; ) {
+  for (uint32_t i = 0;;) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
