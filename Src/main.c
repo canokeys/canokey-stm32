@@ -67,6 +67,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
 uint32_t device_loop_enable;
+uint32_t current_hclk;
 static uint8_t variant;
 /* USER CODE END PV */
 
@@ -323,6 +324,7 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+  current_hclk = 40000000;
 
   /** Initializes the CPU, AHB and APB busses clocks  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
@@ -365,6 +367,7 @@ void SystemClock_Config_80M(void) {
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+  current_hclk = 80000000;
 
   /** Initializes the CPU, AHB and APB busses clocks */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;

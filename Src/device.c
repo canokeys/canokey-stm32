@@ -15,6 +15,7 @@ const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecut
 
 TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
+extern uint32_t current_hclk;
 
 static volatile uint32_t blinking_until;
 static uint16_t touch_threshold = 14, measure_touch;
@@ -25,18 +26,16 @@ void device_delay(int ms) { HAL_Delay(ms); }
 uint32_t device_get_tick(void) { return HAL_GetTick(); }
 
 void device_set_timeout(void (*callback)(void), uint16_t timeout) {
+  const uint32_t prescaler = 8000;
   if (timeout == 0) {
     HAL_TIM_Base_Stop_IT(&htim6);
     return;
   }
   tim_callback = callback;
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 7999;
+  htim6.Init.Prescaler = prescaler - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if (is_nfc()) // TODO：calc the period by Sysclk
-    htim6.Init.Period = 2 * timeout - 1;
-  else
-    htim6.Init.Period = 10 * timeout - 1;
+  htim6.Init.Period = current_hclk / prescaler / 1000 * timeout - 1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK) Error_Handler();
   LL_TIM_ClearFlag_UPDATE(htim6.Instance);
