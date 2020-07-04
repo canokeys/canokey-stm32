@@ -11,6 +11,7 @@
 
 const uint32_t UNTOUCHED_MAX_VAL = 40; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
+const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecutive touch events */
 
 TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
@@ -101,13 +102,20 @@ void led_on(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); }
 void led_off(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET); }
 
 void device_periodic_task(void) {
-  static uint32_t deassert_at = ~0u;
+  static uint32_t last_touched_at = 0, deassert_at = ~0u;
   uint32_t tick = HAL_GetTick();
-  if (GPIO_Touched()) {
-    set_touch_result(TOUCH_SHORT);
-    deassert_at = tick + 2000;
-  } else if (tick > deassert_at) {
-    DBG_MSG("De-assert %u\r\n", measure_touch);
+  if (get_touch_result() == TOUCH_NO && GPIO_Touched()) {
+    if (tick < last_touched_at + TOUCH_GAP_TIME) {
+      // ignore freqent touch events
+      DBG_MSG("touch ignored\r\n");
+    } else {
+      set_touch_result(TOUCH_SHORT);
+      last_touched_at = tick;
+      deassert_at = tick + 2000;
+    }
+  }
+  if (tick > deassert_at) {
+    DBG_MSG("auto de-assert, measured val: %u\r\n", measure_touch);
     measure_touch = 0;
     set_touch_result(TOUCH_NO);
     deassert_at = ~0u;
