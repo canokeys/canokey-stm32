@@ -13,7 +13,7 @@ It works on modern Linux/Windows/macOS operating systems without additional driv
 
 ## Hardware
 
-Current Canokey implementation is based on STM32L423KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. 
+Current Canokey implementation is based on STM32L432KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. 
 
 ### Canokey NFC-A
 
