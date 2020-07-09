@@ -24,6 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32l4xx_ll_spi.h"
 #include "device-config.h"
 #include "device-stm32.h"
 #include "git-rev.h"
@@ -170,98 +171,80 @@ int SetupMPU(void) {
   return 0;
 }
 
-// Initial system clock profile, 40MHz currently
-void SystemClock_Config(void) {
+// Initial system clock profile. 
+// In NFC (low-power) mode: SYSCLK is 40MHz currently
+// In USB mode: SYSCLK is 80MHz
+void SystemClock_Config(bool nfc_low_power, bool pll_reconfig) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  uint32_t flash_wait;
+
+  if (pll_reconfig) {
+    /** Switch SYSCLK to MSI before PLL reconfig */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
+  }
 
   /** Initializes the CPU, AHB and APB busses clocks  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-  RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 20;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV30; // SAI unused
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
-  current_hclk = 40000000;
-
-  /** Initializes the CPU, AHB and APB busses clocks  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_RNG;
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) Error_Handler();
-}
-
-// High-pref system clock profile
-void SystemClock_Config_80M(void) {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  RCC_CRSInitTypeDef RCC_CRSInitStruct = {0};
-
-  /** Changes SYSCLKSource to MSI */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) Error_Handler();
-
-  /** Initializes the CPU, AHB and APB busses clocks */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  if (nfc_low_power) {
+    flash_wait = FLASH_LATENCY_0;
+    current_hclk = 40000000;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
+    RCC_OscInitStruct.PLL.PLLN = 20;
+    RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2; // to RNG, =SYSCLK
+  } else {
+    flash_wait = FLASH_LATENCY_4;
+    current_hclk = 80000000;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    RCC_OscInitStruct.PLL.PLLN = 40;
+    RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4; // unused
+  }
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 40;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV8;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV30; // SAI unused
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
-  current_hclk = 80000000;
 
-  /** Initializes the CPU, AHB and APB busses clocks */
+  /** Initializes the CPU, AHB and APB busses clocks  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_wait) != HAL_OK) Error_Handler();
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) Error_Handler();
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_USB | RCC_PERIPHCLK_RNG;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_RNG;
+  if (nfc_low_power) {
+    PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
+  } else {
+    PeriphClkInit.PeriphClockSelection |= RCC_PERIPHCLK_USB;
+    PeriphClkInit.RngClockSelection = RCC_USBCLKSOURCE_HSI48;
+  }
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
-  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) Error_Handler();
 
-  __HAL_RCC_CRS_CLK_ENABLE();
-  /** Configures CRS */
-  RCC_CRSInitStruct.Prescaler = RCC_CRS_SYNC_DIV1;
-  RCC_CRSInitStruct.Source = RCC_CRS_SYNC_SOURCE_USB;
-  RCC_CRSInitStruct.Polarity = RCC_CRS_SYNC_POLARITY_RISING;
-  RCC_CRSInitStruct.ReloadValue = __HAL_RCC_CRS_RELOADVALUE_CALCULATE(48000000, 1000);
-  RCC_CRSInitStruct.ErrorLimitValue = 34;
-  RCC_CRSInitStruct.HSI48CalibrationValue = 32;
+  if (!nfc_low_power) {
+    RCC_CRSInitTypeDef RCC_CRSInitStruct = {0};
+    __HAL_RCC_CRS_CLK_ENABLE();
+    /** Configures CRS */
+    RCC_CRSInitStruct.Prescaler = RCC_CRS_SYNC_DIV1;
+    RCC_CRSInitStruct.Source = RCC_CRS_SYNC_SOURCE_USB;
+    RCC_CRSInitStruct.Polarity = RCC_CRS_SYNC_POLARITY_RISING;
+    RCC_CRSInitStruct.ReloadValue = __HAL_RCC_CRS_RELOADVALUE_CALCULATE(48000000, 1000);
+    RCC_CRSInitStruct.ErrorLimitValue = 34;
+    RCC_CRSInitStruct.HSI48CalibrationValue = 32;
 
-  HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
-
-  if (HAL_SPI_DeInit(&hspi1) != HAL_OK) Error_Handler();
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK) Error_Handler();
+    HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
+  }
 }
 
 uint8_t detect_usb(void) {
@@ -281,8 +264,11 @@ uint8_t detect_usb(void) {
 
 static void config_usb_mode(void) {
   DBG_MSG("Init USB\n");
-  SystemClock_Config_80M();
-  MX_USART2_UART_Init(); // re-config the baudrate counter
+  SystemClock_Config(false, true);
+  // reconfig peripheral clock dividers
+  LL_SPI_SetBaudRatePrescaler(hspi1.Instance, LL_SPI_BAUDRATEPRESCALER_DIV32);
+  MX_USART2_UART_Init();
+
   usb_device_init();
   // enable the device_periodic_task, which controls LED and Touch sensing
   device_loop_enable = 1;
@@ -309,7 +295,7 @@ int main(void) {
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+  SystemClock_Config(true, false);
 
   /* USER CODE BEGIN SysInit */
 

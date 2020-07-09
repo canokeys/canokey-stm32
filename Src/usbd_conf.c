@@ -61,9 +61,8 @@ extern USBD_StatusTypeDef USBD_LL_BatteryCharging(USBD_HandleTypeDef *pdev);
 
 /* USER CODE BEGIN 1 */
 static void SystemClockConfig_Resume(void);
-
+extern void SystemClock_Config(bool nfc_low_power, bool pll_reconfig);
 /* USER CODE END 1 */
-extern void SystemClock_Config_80M(void);
 
 /*******************************************************************************
                        LL Driver Callbacks (PCD -> USB Device Library)
@@ -791,7 +790,7 @@ void USBD_LL_Delay(uint32_t Delay)
   */
 static void SystemClockConfig_Resume(void)
 {
-  SystemClock_Config_80M();
+  SystemClock_Config(false, true);
 }
 /* USER CODE END 5 */
 
