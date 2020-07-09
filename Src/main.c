@@ -27,7 +27,6 @@
 #include "stm32l4xx_ll_spi.h"
 #include "device-config.h"
 #include "device-stm32.h"
-#include "git-rev.h"
 #include "lfs_init.h"
 #include <admin.h>
 #include <ccid.h>
@@ -172,7 +171,7 @@ int SetupMPU(void) {
 }
 
 // Initial system clock profile. 
-// In NFC (low-power) mode: SYSCLK is 40MHz currently
+// In NFC (low-power) mode: SYSCLK is 32MHz currently
 // In USB mode: SYSCLK is 80MHz
 void SystemClock_Config(bool nfc_low_power, bool pll_reconfig) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -191,10 +190,10 @@ void SystemClock_Config(bool nfc_low_power, bool pll_reconfig) {
   /** Initializes the CPU, AHB and APB busses clocks  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_MSI;
   if (nfc_low_power) {
-    flash_wait = FLASH_LATENCY_0;
-    current_hclk = 40000000;
+    flash_wait = FLASH_LATENCY_1; // according to Ref Manual 3.3.3
+    current_hclk = 32000000;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
-    RCC_OscInitStruct.PLL.PLLN = 20;
+    RCC_OscInitStruct.PLL.PLLN = 16;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2; // to RNG, =SYSCLK
   } else {
     flash_wait = FLASH_LATENCY_4;
