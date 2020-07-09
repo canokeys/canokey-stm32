@@ -146,6 +146,8 @@ Major hardware-dependent components in this repo:
 - `Src/lfs_init.c`: Flash operations used by file system
 - `Src/main.c`: Hardware initialization
 - `Src/usbd_conf.c`: USB interface
+- `Src/retarget.c`: Glue logic between printf and UART
+- `Src/admin_vendor.c`: Vendor-specific commands implementation
 
 ## Documentation
 
