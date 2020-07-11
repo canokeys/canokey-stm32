@@ -337,7 +337,7 @@ int main(void) {
       if (detect_usb()) { // USB plug-in
         config_usb_mode();
         in_nfc_mode = 0;
-        set_nfc_state(in_nfc_mode);
+        set_nfc_state(in_nfc_mode); // comment out this line to emulate NFC mode with USB connection
       }
     } else {
       if ((i & ((1 << 23) - 1)) == 0) {

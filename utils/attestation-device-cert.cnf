@@ -13,6 +13,7 @@ O = CanoKeys
 C = CN
 
 [extensions_sec]
+# subjectKeyIdentifier = hash
 basicConstraints = CA:FALSE
 # AAGUID: should match the value in ctap.c
 1.3.6.1.4.1.45724.1.1.4 = DER:00:00:24:4e:b2:9e:e0:90:4e:49:81:fe:1f:20:f8:d3:b8:f4
