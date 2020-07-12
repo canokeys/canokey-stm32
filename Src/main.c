@@ -65,7 +65,6 @@ TIM_HandleTypeDef htim6;
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
 uint32_t device_loop_enable;
-uint32_t current_hclk;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -195,13 +194,11 @@ void SystemClock_CustomConfig(bool nfc_low_power, bool pll_reconfig) {
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_MSI;
   if (nfc_low_power) {
     flash_wait = FLASH_LATENCY_1; // according to Ref Manual 3.3.3
-    current_hclk = 32000000;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
     RCC_OscInitStruct.PLL.PLLN = 16;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2; // to RNG, =SYSCLK
   } else {
     flash_wait = FLASH_LATENCY_4;
-    current_hclk = 80000000;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
     RCC_OscInitStruct.PLL.PLLN = 40;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4; // unused
@@ -220,8 +217,12 @@ void SystemClock_CustomConfig(bool nfc_low_power, bool pll_reconfig) {
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  if (nfc_low_power) {
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8; // PCLK1 affects TIM6, LPUART1
+  } else {
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1; // PCLK1 affects TIM6, LPUART1, USB SRAM, CRS
+  }
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4; // PCLK2 affects SPI1
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_wait) != HAL_OK) Error_Handler();
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LPUART1 | RCC_PERIPHCLK_RNG;
@@ -269,7 +270,7 @@ static void config_usb_mode(void) {
   DBG_MSG("Init USB\n");
   SystemClock_CustomConfig(false, true);
   // reconfig peripheral clock dividers
-  LL_SPI_SetBaudRatePrescaler(hspi1.Instance, LL_SPI_BAUDRATEPRESCALER_DIV32);
+  LL_SPI_SetBaudRatePrescaler(hspi1.Instance, LL_SPI_BAUDRATEPRESCALER_DIV8);
   MX_LPUART1_UART_Init();
 
   usb_device_init();
@@ -434,7 +435,7 @@ static void MX_SPI1_Init(void) {
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

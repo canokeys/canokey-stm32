@@ -2,6 +2,7 @@
 #include "device-config.h"
 #include "main.h"
 #include "stm32l4xx_ll_gpio.h"
+#include "stm32l4xx_ll_rcc.h"
 #include "stm32l4xx_ll_tim.h"
 #include <admin.h>
 #include <device.h>
@@ -15,7 +16,6 @@ const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecut
 
 extern TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
-extern uint32_t current_hclk;
 
 static volatile uint32_t blinking_until;
 static uint16_t touch_threshold = 14, measure_touch;
@@ -26,7 +26,10 @@ void device_delay(int ms) { HAL_Delay(ms); }
 uint32_t device_get_tick(void) { return HAL_GetTick(); }
 
 void device_set_timeout(void (*callback)(void), uint16_t timeout) {
-  const uint32_t prescaler = 8000;
+  const uint32_t prescaler = 4000;
+  uint32_t counting_freq =
+      HAL_RCC_GetPCLK1Freq() * (LL_RCC_GetAPB1Prescaler() == LL_RCC_APB1_DIV_1 ? 1 : 2) / prescaler;
+  DBG_MSG("counting_freq=%u\n", counting_freq);
   if (timeout == 0) {
     HAL_TIM_Base_Stop_IT(&htim6);
     return;
@@ -35,7 +38,11 @@ void device_set_timeout(void (*callback)(void), uint16_t timeout) {
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = prescaler - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = current_hclk / prescaler / 1000 * timeout - 1;
+  htim6.Init.Period = counting_freq / 1000 * timeout - 1;
+  if (htim6.Init.Period > 65535) {
+    ERR_MSG("TIM6 period %u overflow!\n", htim6.Init.Period);
+    htim6.Init.Period = 65535;
+  }
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK) Error_Handler();
   LL_TIM_ClearFlag_UPDATE(htim6.Instance);
