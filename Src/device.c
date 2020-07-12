@@ -2,6 +2,7 @@
 #include "device-config.h"
 #include "main.h"
 #include "stm32l4xx_ll_gpio.h"
+#include "stm32l4xx_ll_lpuart.h"
 #include "stm32l4xx_ll_rcc.h"
 #include "stm32l4xx_ll_tim.h"
 #include <admin.h>
@@ -16,6 +17,7 @@ const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecut
 
 extern TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
+extern UART_HandleTypeDef DBG_UART;
 
 static volatile uint32_t blinking_until;
 static uint16_t touch_threshold = 14, measure_touch;
@@ -85,6 +87,14 @@ void GPIO_Touch_Calibrate(void) {
 }
 
 static GPIO_PinState GPIO_Touched(void) {
+#ifdef DEBUG_OUTPUT
+  // Emulate touch events with UART input
+  if (LL_LPUART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
+    int data = LL_LPUART_ReceiveData8(DBG_UART.Instance);
+    // DBG_MSG("%x\n", data);
+    if ('U' == data) return GPIO_PIN_SET;
+  }
+#endif
   uint32_t counter = 0;
   LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
   LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
