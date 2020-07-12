@@ -59,8 +59,8 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_FS;
 extern TIM_HandleTypeDef htim6;
-extern uint32_t device_loop_enable;
 /* USER CODE BEGIN EV */
+extern uint32_t device_loop_enable;
 
 /* USER CODE END EV */
 
