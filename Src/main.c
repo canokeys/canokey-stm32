@@ -54,11 +54,13 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef hlpuart1;
+
 RNG_HandleTypeDef hrng;
 
 SPI_HandleTypeDef hspi1;
 
-UART_HandleTypeDef huart2;
+TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
@@ -67,10 +69,12 @@ uint32_t current_hclk;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_USART2_UART_Init(void);
+// static void MX_TIM6_Init(void);
+static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -173,7 +177,7 @@ int SetupMPU(void) {
 // Initial system clock profile. 
 // In NFC (low-power) mode: SYSCLK is 32MHz currently
 // In USB mode: SYSCLK is 80MHz
-void SystemClock_Config(bool nfc_low_power, bool pll_reconfig) {
+void SystemClock_CustomConfig(bool nfc_low_power, bool pll_reconfig) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -220,14 +224,14 @@ void SystemClock_Config(bool nfc_low_power, bool pll_reconfig) {
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_wait) != HAL_OK) Error_Handler();
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_RNG;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LPUART1 | RCC_PERIPHCLK_RNG;
   if (nfc_low_power) {
     PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
   } else {
     PeriphClkInit.PeriphClockSelection |= RCC_PERIPHCLK_USB;
     PeriphClkInit.RngClockSelection = RCC_USBCLKSOURCE_HSI48;
   }
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) Error_Handler();
 
@@ -263,10 +267,10 @@ uint8_t detect_usb(void) {
 
 static void config_usb_mode(void) {
   DBG_MSG("Init USB\n");
-  SystemClock_Config(false, true);
+  SystemClock_CustomConfig(false, true);
   // reconfig peripheral clock dividers
   LL_SPI_SetBaudRatePrescaler(hspi1.Instance, LL_SPI_BAUDRATEPRESCALER_DIV32);
-  MX_USART2_UART_Init();
+  MX_LPUART1_UART_Init();
 
   usb_device_init();
   // enable the device_periodic_task, which controls LED and Touch sensing
@@ -294,7 +298,7 @@ int main(void) {
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config(true, false);
+  SystemClock_CustomConfig(true, false);
 
   /* USER CODE BEGIN SysInit */
 
@@ -306,7 +310,7 @@ int main(void) {
   MX_SPI1_Init();
   // Then initialize other peripherals
   MX_RNG_Init();
-  MX_USART2_UART_Init();
+  MX_LPUART1_UART_Init();
   SetupMPU();
   /* USER CODE BEGIN 2 */
   in_nfc_mode = 1; // boot in NFC mode by default
@@ -349,6 +353,40 @@ int main(void) {
     }
   }
   /* USER CODE END 3 */
+}
+
+/**
+  * @brief LPUART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LPUART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN LPUART1_Init 0 */
+
+  /* USER CODE END LPUART1_Init 0 */
+
+  /* USER CODE BEGIN LPUART1_Init 1 */
+
+  /* USER CODE END LPUART1_Init 1 */
+  hlpuart1.Instance = LPUART1;
+  hlpuart1.Init.BaudRate = 115200;
+  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
+  hlpuart1.Init.StopBits = UART_STOPBITS_1;
+  hlpuart1.Init.Parity = UART_PARITY_NONE;
+  hlpuart1.Init.Mode = UART_MODE_TX_RX;
+  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LPUART1_Init 2 */
+
+  /* USER CODE END LPUART1_Init 2 */
+
 }
 
 /**
@@ -409,38 +447,6 @@ static void MX_SPI1_Init(void) {
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
-}
-
-/**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_USART2_UART_Init(void) {
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK) {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
 }
 
 /**

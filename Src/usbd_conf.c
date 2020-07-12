@@ -26,6 +26,7 @@
 #include "usbd_core.h"
 
 /* USER CODE BEGIN Includes */
+#include "main.h"
 #include "usb_device.h"
 #include "device-config.h"
 #include "usbd_ccid.h"
@@ -61,7 +62,6 @@ extern USBD_StatusTypeDef USBD_LL_BatteryCharging(USBD_HandleTypeDef *pdev);
 
 /* USER CODE BEGIN 1 */
 static void SystemClockConfig_Resume(void);
-extern void SystemClock_Config(bool nfc_low_power, bool pll_reconfig);
 /* USER CODE END 1 */
 
 /*******************************************************************************
@@ -790,7 +790,7 @@ void USBD_LL_Delay(uint32_t Delay)
   */
 static void SystemClockConfig_Resume(void)
 {
-  SystemClock_Config(false, true);
+  SystemClock_CustomConfig(false, true);
 }
 /* USER CODE END 5 */
 

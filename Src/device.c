@@ -13,7 +13,7 @@ const uint32_t UNTOUCHED_MAX_VAL = 40; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
 const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecutive touch events */
 
-TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
 extern uint32_t current_hclk;
 
