@@ -312,7 +312,7 @@ int main(void) {
   // Then initialize other peripherals
   MX_RNG_Init();
   MX_LPUART1_UART_Init();
-  SetupMPU();
+  SetupMPU(); // comment out this line during on-chip debugging
   /* USER CODE BEGIN 2 */
   in_nfc_mode = 1; // boot in NFC mode by default
   nfc_init();
