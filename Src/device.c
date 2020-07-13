@@ -118,23 +118,46 @@ void led_on(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); }
 void led_off(void) { HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET); }
 
 void device_periodic_task(void) {
-  static uint32_t last_touched_at = 0, deassert_at = ~0u;
+  enum {
+    TOUCH_STATE_IDLE,
+    TOUCH_STATE_DOWN,
+    TOUCH_STATE_ASSERT,
+    TOUCH_STATE_DEASSERT,
+  };
+  static uint32_t event_tick, fsm = TOUCH_STATE_IDLE;
   uint32_t tick = HAL_GetTick();
-  if (get_touch_result() == TOUCH_NO && GPIO_Touched()) {
-    if (tick < last_touched_at + TOUCH_GAP_TIME) {
-      // ignore freqent touch events
-      DBG_MSG("touch ignored\r\n");
-    } else {
-      set_touch_result(TOUCH_SHORT);
-      last_touched_at = tick;
-      deassert_at = tick + 2000;
+  switch (fsm)
+  {
+  case TOUCH_STATE_IDLE:
+    if(GPIO_Touched()) {
+      fsm = TOUCH_STATE_DOWN;
+      event_tick = tick;
     }
-  }
-  if (tick > deassert_at) {
-    DBG_MSG("auto de-assert, measured val: %u\r\n", measure_touch);
-    measure_touch = 0;
-    set_touch_result(TOUCH_NO);
-    deassert_at = ~0u;
+    break;
+  case TOUCH_STATE_DOWN:
+    if(!GPIO_Touched()) {
+      fsm = TOUCH_STATE_IDLE;
+    } else if (tick - event_tick > 50) {
+      set_touch_result(TOUCH_SHORT);
+      fsm = TOUCH_STATE_ASSERT;
+      event_tick = tick;
+    }
+    break;
+  case TOUCH_STATE_ASSERT:
+    if (tick - event_tick > TOUCH_GAP_TIME) {
+      set_touch_result(TOUCH_NO);
+      fsm = TOUCH_STATE_DEASSERT;
+      DBG_MSG("touch deassert, max value measured: %u\r\n", measure_touch);
+    }
+    break;
+  case TOUCH_STATE_DEASSERT:
+    if(!GPIO_Touched()) {
+      measure_touch = 0;
+      fsm = TOUCH_STATE_IDLE;
+    }
+    break;
+  default:
+    break;
   }
   device_update_led();
 }
