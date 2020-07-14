@@ -322,7 +322,7 @@ int main(void) {
   littlefs_init();
 
   DBG_MSG("Init applets\n");
-  admin_install(); // initialize admin applet first to load config
+  admin_install(0); // initialize admin applet first to load config
   openpgp_install(0);
   piv_install(0);
   oath_install(0);
