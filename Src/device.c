@@ -31,7 +31,7 @@ void device_set_timeout(void (*callback)(void), uint16_t timeout) {
   const uint32_t prescaler = 4000;
   uint32_t counting_freq =
       HAL_RCC_GetPCLK1Freq() * (LL_RCC_GetAPB1Prescaler() == LL_RCC_APB1_DIV_1 ? 1 : 2) / prescaler;
-  DBG_MSG("counting_freq=%u\n", counting_freq);
+  // DBG_MSG("counting_freq=%u\n", counting_freq);
   if (timeout == 0) {
     HAL_TIM_Base_Stop_IT(&htim6);
     return;

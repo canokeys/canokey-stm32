@@ -5,6 +5,7 @@
 #include <stdalign.h>
 #include <string.h>
 
+#define CHIP_FLASH_SIZE  0x40000
 #define LOOKAHEAD_SIZE   16
 #define CACHE_SIZE       128
 #define WRITE_SIZE       8
@@ -81,7 +82,7 @@ int block_erase(const struct lfs_config *c, lfs_block_t block) {
   EraseInitStruct.Banks = FS_BANK;
   EraseInitStruct.Page = block + FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   EraseInitStruct.NbPages = 1;
-  // DBG_MSG("block %d\r\n", EraseInitStruct.Page);
+  DBG_MSG("block 0x%x\r\n", EraseInitStruct.Page);
 
   HAL_FLASH_Unlock();
   
@@ -111,6 +112,9 @@ int block_sync(const struct lfs_config *c) {
 }
 
 void littlefs_init() {
+  if(FLASH_SIZE < CHIP_FLASH_SIZE) {
+    ERR_MSG("FLASH_SIZE=0x%x, less than required, may not work\n", FLASH_SIZE);
+  }
   memzero(&config, sizeof(config));
   config.read = block_read;
   config.prog = block_prog;
@@ -119,7 +123,7 @@ void littlefs_init() {
   config.read_size = READ_SIZE;
   config.prog_size = WRITE_SIZE;
   config.block_size = FLASH_PAGE_SIZE;
-  config.block_count = FLASH_SIZE/FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
+  config.block_count = CHIP_FLASH_SIZE/FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   config.block_cycles = 100000;
   config.cache_size = CACHE_SIZE;
   config.lookahead_size = LOOKAHEAD_SIZE;
