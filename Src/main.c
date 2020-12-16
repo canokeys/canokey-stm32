@@ -28,14 +28,10 @@
 #include "device-config.h"
 #include "device-stm32.h"
 #include "lfs_init.h"
-#include <admin.h>
+#include <applets.h>
 #include <ccid.h>
-#include <ctap.h>
 #include <device.h>
 #include <nfc.h>
-#include <oath.h>
-#include <openpgp.h>
-#include <piv.h>
 
 /* USER CODE END Includes */
 
@@ -322,11 +318,7 @@ int main(void) {
   littlefs_init();
 
   DBG_MSG("Init applets\n");
-  admin_install(0); // initialize admin applet first to load config
-  openpgp_install(0);
-  piv_install(0);
-  oath_install(0);
-  ctap_install(0);
+  applets_install();
 
   DBG_MSG("Main Loop\n");
   /* USER CODE END 2 */

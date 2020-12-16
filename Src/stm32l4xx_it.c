@@ -206,7 +206,7 @@ void SysTick_Handler(void)
   if (device_loop_enable) {
     static uint32_t cnt = 0;
     cnt++;
-    if (cnt % 128 == 0) {
+    if (cnt % 10 == 0) {
       device_periodic_task();
     }
   }
