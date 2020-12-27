@@ -23,10 +23,10 @@ int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
 
   const char *s;
   static const char *const hw_variant_str[] = {
-      [CANOKEY_STM32L4_EARLY_ES] = "Canokey ES",
-      [CANOKEY_STM32L4_USBA_NFC_R3] = "Canokey NFC-A",
-      [CANOKEY_STM32L4_USBA_NANO_R2] = "Canokey Nano-A",
-      [CANOKEY_STM32L4_USBC_NFC_R1] = "Canokey NFC-C",
+      [CANOKEY_STM32L4_EARLY_ES] = "CanoKey ES (STM32)",
+      [CANOKEY_STM32L4_USBA_NFC_R3] = "CanoKey NFC-A (STM32)",
+      [CANOKEY_STM32L4_USBA_NANO_R2] = "CanoKey Nano-A (STM32)",
+      [CANOKEY_STM32L4_USBC_NFC_R1] = "CanoKey NFC-C (STM32)",
   };
 
   uint8_t variant = stm32_hw_variant_probe();
