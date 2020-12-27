@@ -15,7 +15,7 @@ def gen_ca():
     choice = input("CA key/certificate will be over-written, continue? [y/N] ").lower()
     if not choice.startswith('y'):
         return
-    sp.run("openssl genrsa -out ca.key 2048", shell=True, check=True)
+    sp.run("openssl ecparam -name secp256r1 -genkey -out ca.key", shell=True, check=True)
     sp.run("openssl req -config attestation-ca-cert.cnf -extensions ca_extensions_sec -x509 -days 7120 -new -key ca.key -nodes -out ca.pem", shell=True, check=True)
     with open("ca.srl", "w") as srl:
         srl.write("01")
@@ -47,18 +47,12 @@ def transmit_apdu(connection, apdu):
 def write_configs(connection):
     transmit_apdu(connection, "00A4040005F000000000")
     transmit_apdu(connection, "0020000006313233343536")
-    transmit_apdu(connection, "00FF01010903B005720300B39900")
-    transmit_apdu(connection, "00FF010103039100")
-    transmit_apdu(connection, "00FF01010603A044000420")
+    transmit_apdu(connection, "00FF01000603A044000420")
+    transmit_apdu(connection, "00FF01000903B005720300B39900")
 
 def mp_procedure(reader_name):
-    try:
-        with open("mp-serial.txt", "r") as srl:
-            serial = int(srl.read(), 16)
-            assert serial >= 1 and serial < (1<<32)
-    except FileNotFoundError:
-        serial = 0x10000000
-    serial_hex = "{:08X}".format(serial)
+    print("Input the serial: ")
+    serial_hex = input()
     print("\n------")
     print("Current serial: {}".format(serial_hex))
     input("Insert a canokey then press enter to continue, Ctrl-C to exit")
@@ -89,16 +83,13 @@ def mp_procedure(reader_name):
         traceback.print_exc()
         return False
 
-    serial += 1
-    with open("mp-serial.txt", "w") as srl:
-        srl.write("{}".format(serial_hex))
     return True
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
     parser = argparse.ArgumentParser(description='Initialize canokeys with atestation certificate')
     parser.add_argument('--gen-ca', action='store_true', help='generate atestation CA key/certificate')
-    parser.add_argument('--reader', type=str, default='[OpenPGP PIV OATH]', help='CCID reader name of canokeys')
+    parser.add_argument('--reader', type=str, default='OpenPGP PIV OATH', help='CCID reader name of canokeys')
     args = parser.parse_args()
     if args.gen_ca:
         gen_ca()
@@ -107,4 +98,3 @@ if __name__ == "__main__":
             succ = mp_procedure(args.reader)
             if not succ:
                 time.sleep(0.5)
-
