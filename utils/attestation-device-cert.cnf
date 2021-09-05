@@ -15,7 +15,7 @@ C = CN
 [extensions_sec]
 # subjectKeyIdentifier = hash
 basicConstraints = CA:FALSE
-# AAGUID: should match the value in ctap.c
-1.3.6.1.4.1.45724.1.1.4 = DER:00:00:24:4e:b2:9e:e0:90:4e:49:81:fe:1f:20:f8:d3:b8:f4
+# AAGUID: should match the value in ctap.c (the prefix "04 10" is required for ASN.1 encoding)
+1.3.6.1.4.1.45724.1.1.4 = DER:04:10:24:4e:b2:9e:e0:90:4e:49:81:fe:1f:20:f8:d3:b8:f4
 # fido-u2f-authenticator-transports-extension-v1.2-ps-20170411.html
 # 1.3.6.1.4.1.45724.2.1.1 = DER:03:02:04:30
