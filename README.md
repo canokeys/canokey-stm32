@@ -98,7 +98,7 @@ Possibly identified card (using /home/zhang/.cache/smartcard_list.txt):
         http://canokeys.org/
 ```
 
-Then, initialize the Canokey by running `device-config-init.sh`. This script will login as admin with default PIN `123456`, set device serial number to current Unix timestamp, write the EEPROM of NFC chip (if any), then write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these steps.
+Then, initialize the Canokey by running `device-config-init.sh`. This script will login as admin with default PIN `123456`, set device serial number to current Unix timestamp, configure the NFC AFE chip (if presents), then write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these steps.
 
 ```shell
 $ cd utils
@@ -132,8 +132,7 @@ After initialization, you are free to use Canokey with applications, such as:
 - piv-tool
 - Websites with U2F enabled, e.g., https://github.com/settings/security
 - Websites with WebAuthn enabled, e.g., https://webauthn.me/
-- TOTP dashboard: https://console.canokeys.org/oath/ (under development)
-- CanoKey Web Console: https://console.canokeys.org/ (under development)
+- CanoKey Web Console: https://console.canokeys.org/
 
 ### Internals
 
