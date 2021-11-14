@@ -1,4 +1,4 @@
-# Canokey on STM32
+# CanoKey on STM32
 [![Build Status](https://travis-ci.com/canokeys/canokey-stm32.svg?branch=master)](https://travis-ci.com/canokeys/canokey-stm32) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcanokeys%2Fcanokey-stm32?ref=badge_shield)
 
 CanoKey is an open-source USB/NFC security token, providing the following functions:
@@ -11,11 +11,13 @@ CanoKey is an open-source USB/NFC security token, providing the following functi
 
 It works on modern Linux/Windows/macOS operating systems without additional driver required.
 
+**THERE IS NO SECURITY ASSURANCE USING STM32 VERSION. USE IT AT YOUR OWN RISK. A SECURE VERSION CAN BE FOUND AT https://canokeys.org**
+
 ## Hardware
 
-Current Canokey implementation is based on STM32L432KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. 
+This CanoKey-STM32 implementation is based on STM32L432KC MCU, which features a Cortex-M4 processor, 256KiB Flash, 64 KiB SRAM, and a full-speed USB controller. 
 
-### Canokey NFC-A
+### CanoKey NFC-A
 
 This official hardware design features a USB Type-A plug, NFC antenna and touch sensing. It's an open-source hardware design. Schematics and PCB design files are published at [canokey-hardware](https://github.com/canokeys/canokey-hardware).
 
@@ -61,7 +63,7 @@ Prerequisites:
 
 - Linux OS with pcscd, pcsc_scan and scriptor installed
 
-Connect the Canokey to PC, an USB CCID device should show up. The `pcsc_scan` command should be able to detect a smart card:
+Connect the CanoKey to PC, an USB CCID device should show up. The `pcsc_scan` command should be able to detect a smart card:
 
 ```shell
 $ pcsc_scan
@@ -98,7 +100,7 @@ Possibly identified card (using /home/zhang/.cache/smartcard_list.txt):
         http://canokeys.org/
 ```
 
-Then, initialize the Canokey by running `device-config-init.sh`. This script will login as admin with default PIN `123456`, set device serial number to current Unix timestamp, configure the NFC AFE chip (if presents), then write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these steps.
+Then, initialize the CanoKey by running `device-config-init.sh`. This script will login as admin with default PIN `123456`, set device serial number to current Unix timestamp, configure the NFC AFE chip (if presents), then write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these steps.
 
 ```shell
 $ cd utils
@@ -125,7 +127,7 @@ Reading commands from STDIN
 < 90 00 : Normal processing.
 ```
 
-After initialization, you are free to use Canokey with applications, such as:
+After initialization, you are free to use CanoKey with applications, such as:
 
 - GPG, e.g. `gpg --card-status`
 - SSH with pkcs11, e.g. `ssh -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so user@host`
