@@ -11,7 +11,13 @@ CanoKey is an open-source USB/NFC security token, providing the following functi
 
 It works on modern Linux/Windows/macOS operating systems without additional driver required.
 
-**THERE IS NO SECURITY ASSURANCE USING STM32 VERSION. USE IT AT YOUR OWN RISK. A SECURE VERSION CAN BE FOUND AT https://canokeys.org**
+**THERE IS NO SECURITY ASSURANCE USING THE STM32 VERSION.**
+
+**YOUR PRIVATE KEY MAY BE EXTRACTED IF YOU LOST YOUR KEY.**
+
+**USE IT AT YOUR OWN RISK.**
+
+**A SECURE VERSION CAN BE FOUND AT https://canokeys.org**
 
 ## Hardware
 
