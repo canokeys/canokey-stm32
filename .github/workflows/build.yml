@@ -1,0 +1,49 @@
+name: build
+on: [push]
+jobs:
+  build_fw:
+    name: Build the firmware for STM32
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Packages
+      run: |
+        sudo apt update
+        sudo apt install cmake libc6-i386
+        wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
+        sudo tar -xf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2 -C /opt
+
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Build the firmware
+      run: |
+        mkdir build && pushd build
+        touch git_hash.c
+        cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake  -DCROSS_COMPILE=/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi- -DCMAKE_BUILD_TYPE=Release -DENABLE_DEBUG_OUTPUT=OFF ..
+        make -j2 canokey.bin
+        popd
+
+    - name: Create a Release
+      id: create_release
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: build/canokey.bin
+          asset_name: canokey.bin
+          asset_content_type: application/octet-stream
+          
