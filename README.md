@@ -35,11 +35,14 @@ For demonstration purposes, you may run this project on the [NUCLEO-L432KC](http
 - D2 (PA12) <-> USB D+
 - D10 (PA11) <-> USB D-
 - GND <-> USB GND
-- VIN <-> USB Power
 
-The NFC and touch sensing functions are unavailable on NUCLEO board.
+Then connect the micro USB on NUCLEO to PC for powering and firmware downloading.
+
+![wiring](doc/wiring.jpg)
 
 **The micro USB port on board connects to ST-LINK. Do not confuse it with USB signal pins of MCU.**
+
+The NFC and touch sensing functions are unavailable on NUCLEO board.
 
 ## Build and test
 ### Build the Firmware
