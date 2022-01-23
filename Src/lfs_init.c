@@ -5,13 +5,13 @@
 #include <stdalign.h>
 #include <string.h>
 
-#define CHIP_FLASH_SIZE  0x40000
-#define LOOKAHEAD_SIZE   16
-#define CACHE_SIZE       128
-#define WRITE_SIZE       8
-#define READ_SIZE        1
-#define FS_BASE          (&_lfs_begin)
-#define FS_BANK          FLASH_BANK_1
+#define CHIP_FLASH_SIZE 0x40000
+#define LOOKAHEAD_SIZE 16
+#define CACHE_SIZE 128
+#define WRITE_SIZE 8
+#define READ_SIZE 1
+#define FS_BASE (&_lfs_begin)
+#define FS_BANK FLASH_BANK_1
 #define FLASH_ADDR(b, o) (FS_BASE + (b)*FLASH_PAGE_SIZE + (o))
 #define FLASH_ADDR2BLOCK(a) (((a) & ~0x8000000u) / FLASH_PAGE_SIZE)
 
@@ -21,37 +21,33 @@ static uint8_t prog_buffer[CACHE_SIZE];
 static alignas(4) uint8_t lookahead_buffer[LOOKAHEAD_SIZE];
 extern uint8_t _lfs_begin;
 
-int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
-               void *buffer, lfs_size_t size) {
+int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
   UNUSED(c);
   // DBG_MSG("blk %d @ %p len %u buf %p\r\n", block, (void*)FLASH_ADDR(block, off), size, buffer);
   memcpy(buffer, (const void *)FLASH_ADDR(block, off), size);
   return 0;
 }
 
-static int program_space(uint32_t paddr, const void *buffer, lfs_size_t size)
-{
-    int ret = 0;
-    for (lfs_size_t i = 0; i < size; i += WRITE_SIZE)
-    {
-        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, paddr + i, *(const uint64_t*)((uintptr_t)buffer + i)) != HAL_OK){
-            ERR_MSG("Flash prog fail @%#lx", paddr + i);
-            ret = LFS_ERR_CORRUPT;
-            break;
-        }
+static int program_space(uint32_t paddr, const void *buffer, lfs_size_t size) {
+  int ret = 0;
+  for (lfs_size_t i = 0; i < size; i += WRITE_SIZE) {
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, paddr + i, *(const uint64_t *)((uintptr_t)buffer + i)) !=
+        HAL_OK) {
+      ERR_MSG("Flash prog fail @%#lx", paddr + i);
+      ret = LFS_ERR_CORRUPT;
+      break;
     }
+  }
 
-    return ret;
+  return ret;
 }
 
-int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
-               const void *buffer, lfs_size_t size) {
+int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size) {
   UNUSED(c);
 
-  if(size % WRITE_SIZE != 0 || off % WRITE_SIZE != 0)
-      return LFS_ERR_INVAL;
+  if (size % WRITE_SIZE != 0 || off % WRITE_SIZE != 0) return LFS_ERR_INVAL;
 
-  uint32_t paddr = (uint32_t) FLASH_ADDR(block, off);
+  uint32_t paddr = (uint32_t)FLASH_ADDR(block, off);
   int ret;
 
   // DBG_MSG("blk %d @ %p len %u buf %p\r\n", block, (void*)paddr, size, buffer);
@@ -85,11 +81,11 @@ int block_erase(const struct lfs_config *c, lfs_block_t block) {
   DBG_MSG("block 0x%x\r\n", EraseInitStruct.Page);
 
   HAL_FLASH_Unlock();
-  
-  if(HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK) {
-      ret = LFS_ERR_IO;
-      ERR_MSG("HAL_FLASHEx_Erase %#x failed", (unsigned int)PageError);
-      goto erase_fail;
+
+  if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK) {
+    ret = LFS_ERR_IO;
+    ERR_MSG("HAL_FLASHEx_Erase %#x failed", (unsigned int)PageError);
+    goto erase_fail;
   }
 
   // Invalidate cache
@@ -112,7 +108,7 @@ int block_sync(const struct lfs_config *c) {
 }
 
 void littlefs_init() {
-  if(FLASH_SIZE < CHIP_FLASH_SIZE) {
+  if (FLASH_SIZE < CHIP_FLASH_SIZE) {
     ERR_MSG("FLASH_SIZE=0x%x, less than required, may not work\n", FLASH_SIZE);
   }
   memzero(&config, sizeof(config));
@@ -123,7 +119,7 @@ void littlefs_init() {
   config.read_size = READ_SIZE;
   config.prog_size = WRITE_SIZE;
   config.block_size = FLASH_PAGE_SIZE;
-  config.block_count = CHIP_FLASH_SIZE/FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
+  config.block_count = CHIP_FLASH_SIZE / FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   config.block_cycles = 100000;
   config.cache_size = CACHE_SIZE;
   config.lookahead_size = LOOKAHEAD_SIZE;
@@ -131,5 +127,19 @@ void littlefs_init() {
   config.prog_buffer = prog_buffer;
   config.lookahead_buffer = lookahead_buffer;
   DBG_MSG("Flash base %p, %u blocks (%u bytes)\r\n", FS_BASE, config.block_count, FLASH_PAGE_SIZE);
-  fs_init(&config);
+
+  int err;
+  for (int retry = 0; retry < 3; retry++) {
+    err = fs_mount(&config);
+    if (!err) return;
+  }
+  // should happen for the first boot
+  DBG_MSG("Formating data area...\r\n");
+  fs_format(&config);
+  err = fs_mount(&config);
+  if (err) {
+    ERR_MSG("Failed to mount FS after formating\r\n");
+    for (;;)
+      ;
+  }
 }
