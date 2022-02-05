@@ -28,6 +28,7 @@
 #include "device-config.h"
 #include "device-stm32.h"
 #include "lfs_init.h"
+#include <apdu.h>
 #include <applets.h>
 #include <ccid.h>
 #include <device.h>
