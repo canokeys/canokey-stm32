@@ -319,6 +319,7 @@ int main(void) {
 
   DBG_MSG("Init applets\n");
   applets_install();
+  init_apdu_buffer();
 
   DBG_MSG("Main Loop\n");
   /* USER CODE END 2 */
