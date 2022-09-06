@@ -26,7 +26,7 @@ int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
       [CANOKEY_STM32L4_EARLY_ES] = "CanoKey ES (STM32)",
       [CANOKEY_STM32L4_USBA_NFC_R3] = "CanoKey NFC-A (STM32)",
       [CANOKEY_STM32L4_USBA_NANO_R2] = "CanoKey Nano-A (STM32)",
-      [CANOKEY_STM32L4_USBC_NFC_R1] = "CanoKey NFC-C (STM32)",
+      [CANOKEY_STM32L4_USBC_NFC_R2] = "CanoKey STM32L4 NFC",
   };
 
   uint8_t variant = stm32_hw_variant_probe();
@@ -38,6 +38,17 @@ int admin_vendor_hw_variant(const CAPDU *capdu, RAPDU *rapdu) {
   size_t len = strlen(s);
   memcpy(RDATA, s, len);
   LL = len;
+  if (LL > LE) LL = LE;
+
+  return 0;
+}
+
+int admin_vendor_hw_sn(const CAPDU *capdu, RAPDU *rapdu) {
+  UNUSED(capdu);
+
+  static const char *const hw_sn = "YOLO";
+  memcpy(RDATA, hw_sn, 8);
+  LL = 8;
   if (LL > LE) LL = LE;
 
   return 0;

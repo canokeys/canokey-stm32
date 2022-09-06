@@ -28,6 +28,7 @@ void device_delay(int ms) { HAL_Delay(ms); }
 uint32_t device_get_tick(void) { return HAL_GetTick(); }
 
 void device_set_timeout(void (*callback)(void), uint16_t timeout) {
+  DBG_MSG("device_set_timeout\n");
   const uint32_t prescaler = 4000;
   uint32_t counting_freq =
       HAL_RCC_GetPCLK1Freq() * (LL_RCC_GetAPB1Prescaler() == LL_RCC_APB1_DIV_1 ? 1 : 2) / prescaler;
@@ -198,7 +199,7 @@ uint8_t stm32_hw_variant_probe(void) {
   else if (hwcfg_set_and_probe(cfg_pins[2], cfg_pins[3]))
     result = CANOKEY_STM32L4_USBA_NFC_R3;
   else if (hwcfg_set_and_probe(cfg_pins[1], cfg_pins[3]))
-    result = CANOKEY_STM32L4_USBC_NFC_R1;
+    result = CANOKEY_STM32L4_USBC_NFC_R2;
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
