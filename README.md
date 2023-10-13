@@ -80,10 +80,10 @@ Connect the CanoKey to PC, an USB CCID device should show up. The `pcsc_scan` co
 $ pcsc_scan
 Using reader plug'n play mechanism
 Scanning present readers...
-0: Canokeys Canokey [OpenPGP PIV OATH] (00000000) 00 00
+0: Canokeys [OpenPGP PIV OATH] (00000000) 00 00
  
 Sat Jan 22 20:26:49 2022
- Reader 0: Canokeys Canokey [OpenPGP PIV OATH] (00000000) 00 00
+ Reader 0: Canokeys [OpenPGP PIV OATH] (00000000) 00 00
   Event number: 0
   Card state: Card inserted, 
   ATR: 3B F7 11 00 00 81 31 FE 65 43 61 6E 6F 6B 65 79 99
@@ -114,9 +114,10 @@ Possibly identified card (using /home/zhang/.cache/smartcard_list.txt):
 Then, initialize the CanoKey by running `device-config-init.sh`. This script will login as admin with default PIN `123456`, set device serial number to current Unix timestamp, configure the NFC AFE chip (if presents), then write an attestation certificate used by FIDO. Refer to [admin doc](https://doc.canokeys.org/development/protocols/admin/) if you want to customize these steps.
 
 ```shell
-$ ./device-config-init.sh 'Canokeys Canokey [OpenPGP PIV OATH] (00000000) 00 00'
-Reader name: Canokeys Canokey [OpenPGP PIV OATH] (00000000) 00 00
-Using given card reader: Canokeys Canokey [OpenPGP PIV OATH] (00000000) 00 00
+$ cd utils
+$ ./device-config-init.sh 'Canokeys [OpenPGP PIV OATH] (00000000) 00 00'
+Reader name: Canokeys [OpenPGP PIV OATH] (00000000) 00 00
+Using given card reader: Canokeys [OpenPGP PIV OATH] (00000000) 00 00
 Using T=1 protocol
 Reading commands from STDIN
 > 00 A4 04 00 05 F0 00 00 00 00 
