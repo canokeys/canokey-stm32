@@ -88,14 +88,6 @@ void GPIO_Touch_Calibrate(void) {
 }
 
 static GPIO_PinState GPIO_Touched(void) {
-#ifdef DEBUG_OUTPUT
-  // Emulate touch events with UART input
-  if (LL_USART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
-    int data = LL_USART_ReceiveData8(DBG_UART.Instance);
-    // DBG_MSG("%x\n", data);
-    if ('U' == data) return GPIO_PIN_SET;
-  }
-#endif
   uint32_t counter = 0;
   LL_GPIO_SetPinMode(TOUCH_GPIO_Port, TOUCH_Pin, GPIO_MODE_OUTPUT_PP);
   LL_GPIO_SetOutputPin(TOUCH_GPIO_Port, TOUCH_Pin);
@@ -130,6 +122,18 @@ void device_periodic_task(void) {
   switch (fsm)
   {
   case TOUCH_STATE_IDLE:
+#ifdef DEBUG_OUTPUT
+    // Emulate touch events with UART input
+    if (LL_USART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
+      int data = LL_USART_ReceiveData8(DBG_UART.Instance);
+      DBG_MSG("UART: %x\n", data);
+      if ('T' == data) {
+        set_touch_result(TOUCH_SHORT);
+        fsm = TOUCH_STATE_ASSERT;
+        event_tick = tick;
+      }
+    }
+#endif
     if(GPIO_Touched()) {
       fsm = TOUCH_STATE_DOWN;
       event_tick = tick;
