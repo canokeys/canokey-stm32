@@ -3,6 +3,7 @@
 #include "main.h"
 #include "stm32l4xx_ll_gpio.h"
 #include "stm32l4xx_ll_lpuart.h"
+#include "stm32l4xx_ll_usart.h"
 #include "stm32l4xx_ll_rcc.h"
 #include "stm32l4xx_ll_tim.h"
 #include <admin.h>
@@ -89,8 +90,8 @@ void GPIO_Touch_Calibrate(void) {
 static GPIO_PinState GPIO_Touched(void) {
 #ifdef DEBUG_OUTPUT
   // Emulate touch events with UART input
-  if (LL_LPUART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
-    int data = LL_LPUART_ReceiveData8(DBG_UART.Instance);
+  if (LL_USART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
+    int data = LL_USART_ReceiveData8(DBG_UART.Instance);
     // DBG_MSG("%x\n", data);
     if ('U' == data) return GPIO_PIN_SET;
   }
