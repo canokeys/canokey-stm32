@@ -10,6 +10,7 @@
 
 #define VENDOR_NFC_SET 0x01
 #define VENDOR_NFC_GET 0x02
+#define VENDOR_STACK_TEST 0x03
 #define VENDOR_RDP 0x55
 #define VENDOR_DFU 0x22
 
@@ -55,6 +56,28 @@ int admin_vendor_version(const CAPDU *capdu, RAPDU *rapdu) {
   return 0;
 }
 
+extern uint32_t _stack_boundary;
+
+static int stack_test(const CAPDU *capdu, RAPDU *rapdu) {
+  uint8_t ref;
+  uint8_t *cur = &ref;
+  uint8_t *bot = (uint8_t*)&_stack_boundary;
+  DBG_MSG("bottom = %p\n", bot);
+  if (P2 == 0x55) {
+    memset(bot, 0xcc, cur - bot - 0x20);
+  } else if (P2 == 0x66) {
+    for (uint8_t *p = bot; p < cur; p++)
+      if (*p != 0xcc) {
+        DBG_MSG("address %p is 0x%x\n", p, (int)*p);
+        *(uintptr_t*)RDATA = (uintptr_t)p;
+        LL = sizeof(uintptr_t);
+        return 0;
+      }
+    EXCEPT(SW_CHECKING_ERROR);
+  }
+  return 0;
+} 
+
 int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
   uint16_t addr;
 
@@ -83,6 +106,10 @@ int admin_vendor_specific(const CAPDU *capdu, RAPDU *rapdu) {
 
     fm_read_eeprom(addr, RDATA, LE);
     LL = LE;
+    break;
+
+  case VENDOR_STACK_TEST:
+    return stack_test(capdu, rapdu);
     break;
 
   case VENDOR_RDP:
