@@ -232,12 +232,9 @@ void usb_resources_alloc(void) {
   IFACE_TABLE.ccid = iface++;
   EP_SIZE_TABLE.ccid = 64;
 
-  if (cfg_is_kbd_interface_enable() && ep <= EP_ADDR_MSK) {
-    DBG_MSG("Keyboard interface enabled, Iface %u\n", iface);
-    EP_TABLE.kbd_hid = ep;
-    IFACE_TABLE.kbd_hid = iface;
-    EP_SIZE_TABLE.kbd_hid = 8;
-  }
+  EP_TABLE.kbd_hid = ep;
+  IFACE_TABLE.kbd_hid = iface;
+  EP_SIZE_TABLE.kbd_hid = 8;
 }
 
 int device_atomic_compare_and_swap(volatile uint32_t *var, uint32_t expect, uint32_t update) {
