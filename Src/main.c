@@ -61,7 +61,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
-uint32_t device_loop_enable;
+uint8_t device_loop_enable, usb_init_done;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -274,6 +274,11 @@ static void config_usb_mode(void) {
   // enable the device_periodic_task, which controls LED and Touch sensing
   device_loop_enable = 1;
 }
+// Called by core library
+void USBD_LL_Init_Done(void)
+{
+  usb_init_done = 1;
+}
 /* USER CODE END 0 */
 
 /**
@@ -343,7 +348,8 @@ int main(void) {
         DBG_MSG("Touch calibrating...\n");
         GPIO_Touch_Calibrate();
       }
-      device_loop(1);
+      if (usb_init_done)
+        device_loop(1);
       ++i;
     }
   }

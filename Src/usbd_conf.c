@@ -793,9 +793,6 @@ static void SystemClockConfig_Resume(void)
   SystemClock_CustomConfig(false, true);
 }
 
-// Unused callback
-void USBD_LL_Init_Done(void) {}
-
 /* USER CODE END 5 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
