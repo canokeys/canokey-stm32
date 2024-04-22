@@ -7,7 +7,6 @@
 
 #define CHIP_FLASH_SIZE 0x40000
 #define LOOKAHEAD_SIZE 16
-#define CACHE_SIZE 128
 #define WRITE_SIZE 8
 #define READ_SIZE 1
 #define FS_BASE (&_lfs_begin)
@@ -16,8 +15,9 @@
 #define FLASH_ADDR2BLOCK(a) (((a) & ~0x8000000u) / FLASH_PAGE_SIZE)
 
 static struct lfs_config config;
-static uint8_t read_buffer[CACHE_SIZE];
-static uint8_t prog_buffer[CACHE_SIZE];
+static uint8_t read_buffer[LFS_CACHE_SIZE];
+static alignas(4) uint8_t prog_buffer[LFS_CACHE_SIZE];
+// uint8_t file_buffer[LFS_LFS_CACHE_SIZE];
 static alignas(4) uint8_t lookahead_buffer[LOOKAHEAD_SIZE];
 extern uint8_t _lfs_begin;
 
@@ -30,12 +30,28 @@ int block_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, voi
 
 static int program_space(uint32_t paddr, const void *buffer, lfs_size_t size) {
   int ret = 0;
-  for (lfs_size_t i = 0; i < size; i += WRITE_SIZE) {
-    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, paddr + i, *(const uint64_t *)((uintptr_t)buffer + i)) !=
+  uint32_t typ;
+  for (lfs_size_t i = 0; size;) {
+    // DBG_MSG("%d\n", i);
+    // if (size >= 512) {
+    //   typ = FLASH_TYPEPROGRAM_FAST;
+    // } else if (size >= 256) {
+    //   typ = FLASH_TYPEPROGRAM_FAST_AND_LAST;
+    // } else {
+      typ = FLASH_TYPEPROGRAM_DOUBLEWORD;
+    // }
+    if (HAL_FLASH_Program(typ, paddr + i, *(const uint64_t *)((uintptr_t)buffer + i)) !=
         HAL_OK) {
-      ERR_MSG("Flash prog fail @%#lx", paddr + i);
+      ERR_MSG("Flash prog failed @%#lx\n", paddr + i);
       ret = LFS_ERR_CORRUPT;
       break;
+    }
+    if (typ == FLASH_TYPEPROGRAM_DOUBLEWORD) {
+      i += 8;
+      size -= 8;
+    } else {
+      i += 256;
+      size -= 256;
     }
   }
 
@@ -51,18 +67,24 @@ int block_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, con
   int ret;
 
   // DBG_MSG("blk %d @ %p len %u buf %p\r\n", block, (void*)paddr, size, buffer);
-
+  // for (size_t i = 0; i < size; i++)
+  // {
+  //   if(*(uint8_t*)(paddr+i) != 0xFF) {
+  //     DBG_MSG("blank check: %p = %x\n", paddr+i, *(uint8_t*)(paddr+i));
+  //   }
+  // }
+  
   HAL_FLASH_Unlock();
   ret = program_space(paddr, buffer, size);
   HAL_FLASH_Lock();
 
   // Invalidate cache
-  __HAL_FLASH_DATA_CACHE_DISABLE();
-  // __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
-  __HAL_FLASH_DATA_CACHE_RESET();
-  // __HAL_FLASH_INSTRUCTION_CACHE_RESET();
-  // __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
-  __HAL_FLASH_DATA_CACHE_ENABLE();
+  // __HAL_FLASH_DATA_CACHE_DISABLE();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
+  // __HAL_FLASH_DATA_CACHE_RESET();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_RESET();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
+  // __HAL_FLASH_DATA_CACHE_ENABLE();
 
   // DBG_MSG("verify %d\n", memcmp(buffer, (const void *)FLASH_ADDR(block, off), size));
 
@@ -78,26 +100,27 @@ int block_erase(const struct lfs_config *c, lfs_block_t block) {
   EraseInitStruct.Banks = FS_BANK;
   EraseInitStruct.Page = block + FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   EraseInitStruct.NbPages = 1;
-  DBG_MSG("block 0x%x\r\n", EraseInitStruct.Page);
+  // DBG_MSG("block 0x%x\r\n", EraseInitStruct.Page);
 
   HAL_FLASH_Unlock();
 
   if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK) {
     ret = LFS_ERR_IO;
-    ERR_MSG("HAL_FLASHEx_Erase %#x failed", (unsigned int)PageError);
+    ERR_MSG("HAL_FLASHEx_Erase %#x failed\n", (unsigned int)PageError);
     goto erase_fail;
   }
 
   // Invalidate cache
-  __HAL_FLASH_DATA_CACHE_DISABLE();
-  // __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
-  __HAL_FLASH_DATA_CACHE_RESET();
-  // __HAL_FLASH_INSTRUCTION_CACHE_RESET();
-  // __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
-  __HAL_FLASH_DATA_CACHE_ENABLE();
+  // __HAL_FLASH_DATA_CACHE_DISABLE();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
+  // __HAL_FLASH_DATA_CACHE_RESET();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_RESET();
+  // // __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
+  // __HAL_FLASH_DATA_CACHE_ENABLE();
 
 erase_fail:
   HAL_FLASH_Lock();
+  // DBG_MSG("done\n");
 
   return ret;
 }
@@ -121,7 +144,7 @@ void littlefs_init() {
   config.block_size = FLASH_PAGE_SIZE;
   config.block_count = CHIP_FLASH_SIZE / FLASH_PAGE_SIZE - FLASH_ADDR2BLOCK((uintptr_t)FS_BASE);
   config.block_cycles = 100000;
-  config.cache_size = CACHE_SIZE;
+  config.cache_size = LFS_CACHE_SIZE;
   config.lookahead_size = LOOKAHEAD_SIZE;
   config.read_buffer = read_buffer;
   config.prog_buffer = prog_buffer;
