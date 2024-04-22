@@ -127,25 +127,27 @@ void device_periodic_task(void) {
     if (LL_USART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
       int data = LL_USART_ReceiveData8(DBG_UART.Instance);
       DBG_MSG("UART: %x\n", data);
-      if ('T' == data) {
-        set_touch_result(TOUCH_SHORT);
+      if ('T' == data || 'L' == data) {
+        set_touch_result('T' == data ? TOUCH_SHORT : TOUCH_LONG);
         fsm = TOUCH_STATE_ASSERT;
         event_tick = tick;
       }
     }
 #endif
     if(GPIO_Touched()) {
+      measure_touch = 0;
       fsm = TOUCH_STATE_DOWN;
       event_tick = tick;
     }
     break;
   case TOUCH_STATE_DOWN:
-    if(!GPIO_Touched()) {
-      fsm = TOUCH_STATE_IDLE;
-    } else if (tick - event_tick > 50) {
-      set_touch_result(TOUCH_SHORT);
-      fsm = TOUCH_STATE_ASSERT;
-      event_tick = tick;
+    if(!GPIO_Touched() || tick - event_tick > 500) {
+      if (tick - event_tick > 50) {
+        set_touch_result(tick - event_tick > 500 ? TOUCH_LONG : TOUCH_SHORT);
+        fsm = TOUCH_STATE_ASSERT;
+        event_tick = tick;
+      } else
+        fsm = TOUCH_STATE_IDLE;
     }
     break;
   case TOUCH_STATE_ASSERT:
