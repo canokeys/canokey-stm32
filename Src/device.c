@@ -14,7 +14,9 @@
 
 const uint32_t UNTOUCHED_MAX_VAL = 40; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
-const uint32_t TOUCH_GAP_TIME = 1500; /* Gap period (in ms) between two consecutive touch events */
+const uint32_t TOUCH_GAP_TIME = 800; /* Gap period (in ms) between two consecutive touch events */
+const uint32_t MIN_LONG_TOUCH_TIME = 500;
+const uint32_t MIN_TOUCH_TIME = 20;
 
 extern TIM_HandleTypeDef htim6;
 extern SPI_HandleTypeDef FM_SPI;
@@ -127,25 +129,27 @@ void device_periodic_task(void) {
     if (LL_USART_IsActiveFlag_RXNE(DBG_UART.Instance)) {
       int data = LL_USART_ReceiveData8(DBG_UART.Instance);
       DBG_MSG("UART: %x\n", data);
-      if ('T' == data) {
-        set_touch_result(TOUCH_SHORT);
+      if ('T' == data || 'L' == data) {
+        set_touch_result('T' == data ? TOUCH_SHORT : TOUCH_LONG);
         fsm = TOUCH_STATE_ASSERT;
         event_tick = tick;
       }
     }
 #endif
     if(GPIO_Touched()) {
+      measure_touch = 0;
       fsm = TOUCH_STATE_DOWN;
       event_tick = tick;
     }
     break;
   case TOUCH_STATE_DOWN:
-    if(!GPIO_Touched()) {
-      fsm = TOUCH_STATE_IDLE;
-    } else if (tick - event_tick > 50) {
-      set_touch_result(TOUCH_SHORT);
-      fsm = TOUCH_STATE_ASSERT;
-      event_tick = tick;
+    if(!GPIO_Touched() || tick - event_tick > MIN_LONG_TOUCH_TIME) {
+      if (tick - event_tick > MIN_TOUCH_TIME) {
+        set_touch_result(tick - event_tick > MIN_LONG_TOUCH_TIME ? TOUCH_LONG : TOUCH_SHORT);
+        fsm = TOUCH_STATE_ASSERT;
+        event_tick = tick;
+      } else
+        fsm = TOUCH_STATE_IDLE;
     }
     break;
   case TOUCH_STATE_ASSERT:
@@ -232,12 +236,9 @@ void usb_resources_alloc(void) {
   IFACE_TABLE.ccid = iface++;
   EP_SIZE_TABLE.ccid = 64;
 
-  if (cfg_is_kbd_interface_enable() && ep <= EP_ADDR_MSK) {
-    DBG_MSG("Keyboard interface enabled, Iface %u\n", iface);
-    EP_TABLE.kbd_hid = ep;
-    IFACE_TABLE.kbd_hid = iface;
-    EP_SIZE_TABLE.kbd_hid = 8;
-  }
+  EP_TABLE.kbd_hid = ep;
+  IFACE_TABLE.kbd_hid = iface;
+  EP_SIZE_TABLE.kbd_hid = 8;
 }
 
 int device_atomic_compare_and_swap(volatile uint32_t *var, uint32_t expect, uint32_t update) {

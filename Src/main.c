@@ -61,7 +61,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
-uint32_t device_loop_enable;
+uint8_t device_loop_enable, usb_init_done;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -274,6 +274,20 @@ static void config_usb_mode(void) {
   // enable the device_periodic_task, which controls LED and Touch sensing
   device_loop_enable = 1;
 }
+
+static int check_is_nfc_en(void) {
+  uint32_t *flash_loc = (uint32_t*) 0x1FFF7808U;
+  uint32_t val = *flash_loc; //FLASH->PCROP1SR;
+  DBG_MSG("%x\n", val);
+  return val == 0xFFFFFFFFU || // ST production default value
+          val == 0xFFFF802a; // magic written by admin_vendor_nfc_enable()
+}
+
+// Called by core library
+void USBD_LL_Init_Done(void)
+{
+  usb_init_done = 1;
+}
 /* USER CODE END 0 */
 
 /**
@@ -311,7 +325,7 @@ int main(void) {
   MX_USART2_UART_Init();
   SetupMPU(); // comment out this line during on-chip debugging
   /* USER CODE BEGIN 2 */
-  in_nfc_mode = 1; // boot in NFC mode by default
+  in_nfc_mode = check_is_nfc_en(); // boot in NFC mode by default
   nfc_init();
   set_nfc_state(in_nfc_mode);
 
@@ -322,6 +336,10 @@ int main(void) {
   applets_install();
   init_apdu_buffer();
 
+  if (!in_nfc_mode) {
+    while (!detect_usb());
+    config_usb_mode();
+  }
   DBG_MSG("Main Loop\n");
   /* USER CODE END 2 */
 
@@ -343,7 +361,8 @@ int main(void) {
         DBG_MSG("Touch calibrating...\n");
         GPIO_Touch_Calibrate();
       }
-      device_loop(1);
+      if (usb_init_done)
+        device_loop(1);
       ++i;
     }
   }
