@@ -792,6 +792,7 @@ static void SystemClockConfig_Resume(void)
 {
   SystemClock_CustomConfig(false, true);
 }
+
 /* USER CODE END 5 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
