@@ -68,16 +68,16 @@ int admin_vendor_nfc_enable(const CAPDU *capdu, RAPDU *rapdu) {
     .PCROPStartAddr = FLASH_BASE + magic, // Reuse this option word as NFC switch
     .PCROPEndAddr = FLASH_BASE + 0xF, // Fixed value
   };
-  DBG_MSG("Unlock OB\n");
+  // DBG_MSG("Unlock OB\n");
   HAL_FLASH_Unlock();
   HAL_FLASH_OB_Unlock();
   int ret = HAL_FLASHEx_OBProgram(&cfg);
   HAL_FLASH_OB_Lock();
   HAL_FLASH_Lock();
   HAL_FLASHEx_OBGetConfig(&cfg);
-  uint32_t *flash_loc = (uint32_t*) 0x1FFF7808U;
-  DBG_MSG("HAL_FLASHEx_OBGetConfig: %d %x %x %x\n",
-    ret, cfg.PCROPStartAddr, cfg.PCROPEndAddr, *flash_loc);
+  // uint32_t *flash_loc = (uint32_t*) 0x1FFF7808U;
+  // DBG_MSG("HAL_FLASHEx_OBGetConfig: %d %x %x %x\n",
+  //   ret, cfg.PCROPStartAddr, cfg.PCROPEndAddr, *flash_loc);
   // DBG_MSG("value= %x %x\n", *(uint32_t*)FLASH_BASE, *(uint32_t*)cfg.PCROPStartAddr);
 
   if (ret != HAL_OK) return -1;
