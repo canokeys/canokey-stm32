@@ -61,7 +61,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 extern uint32_t _stack_boundary;
-uint8_t device_loop_enable, usb_init_done;
+uint8_t device_loop_enable;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -270,6 +270,12 @@ static void config_usb_mode(void) {
   LL_SPI_SetBaudRatePrescaler(hspi1.Instance, LL_SPI_BAUDRATEPRESCALER_DIV8);
   MX_USART2_UART_Init();
 
+  /* Enable USB power on Pwrctrl CR2 register. */
+  HAL_PWREx_EnableVddUSB();
+  /* Peripheral clock enable */
+  __HAL_RCC_USB_CLK_ENABLE();
+  /* Peripheral interrupt init */
+  HAL_NVIC_SetPriority(USB_IRQn, 1, 0);
   usb_device_init();
   // enable the device_periodic_task, which controls LED and Touch sensing
   device_loop_enable = 1;
@@ -281,12 +287,6 @@ static int check_is_nfc_en(void) {
   DBG_MSG("%x\n", val);
   return val == 0xFFFFFFFFU || // ST production default value
           val == 0xFFFF802a; // magic written by admin_vendor_nfc_enable()
-}
-
-// Called by core library
-void USBD_LL_Init_Done(void)
-{
-  usb_init_done = 1;
 }
 /* USER CODE END 0 */
 
@@ -361,8 +361,7 @@ int main(void) {
         DBG_MSG("Touch calibrating...\n");
         GPIO_Touch_Calibrate();
       }
-      if (usb_init_done)
-        device_loop(1);
+      device_loop(1);
       ++i;
     }
   }

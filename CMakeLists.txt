@@ -12,13 +12,17 @@ set(CMAKE_ASM_FLAGS "-mcpu=${CMAKE_SYSTEM_PROCESSOR} -mthumb -Wall -fdata-sectio
 set(CMAKE_EXE_LINKER_FLAGS "-specs=nano.specs -T${MCU_LINKER_SCRIPT} -Wl,-Map=layout.map,--cref -Wl,--gc-sections ${CMAKE_EXE_LINKER_FLAGS}")
 set(CMAKE_C_FLAGS_RELEASE "-Os -g3")
 
+set(TINYUSB_MCU "OPT_MCU_STM32L4" CACHE STRING "TinyUSB MCU name")
+#set(TINYUSB_DCD_INCLUDES ${DCD_INCLUDE_DIRS} CACHE STRING "TinyUSB DCD include paths")
 add_definitions(-DMBEDTLS_CONFIG_FILE="${CMAKE_SOURCE_DIR}/Inc/mbedtls-config.h")
 add_definitions(-DDEVICE_CONFIG_FILE="${CMAKE_SOURCE_DIR}/Inc/device-config.h")
 add_subdirectory(canokey-core)
 
+add_definitions(-DCFG_TUSB_MCU=${TINYUSB_MCU})
+set(TINYUSB_DCD_SRC canokey-core/tinyusb/src/portable/st/stm32_fsdev/dcd_stm32_fsdev.c)
 aux_source_directory(Src SOURCE_CODE_COMMON)
 aux_source_directory(Drivers/STM32L4xx_HAL_Driver/Src SOURCE_CODE_BOARD)
-add_executable(canokey ${SOURCE_CODE_COMMON} ${SOURCE_CODE_BOARD} ${STARTUP_ASM_FILE})
+add_executable(canokey ${SOURCE_CODE_COMMON} ${SOURCE_CODE_BOARD} ${TINYUSB_DCD_SRC} ${STARTUP_ASM_FILE})
 target_link_libraries(canokey PRIVATE canokey-core c m nosys)
 
 target_compile_definitions(canokey PRIVATE USE_HAL_DRIVER USE_FULL_LL_DRIVER STM32L432xx)
