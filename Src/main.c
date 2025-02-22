@@ -281,7 +281,7 @@ static void config_usb_mode(void) {
   device_loop_enable = 1;
 }
 
-static int check_is_nfc_en(void) {
+int check_is_nfc_en(void) {
   uint32_t *flash_loc = (uint32_t*) 0x1FFF7808U;
   uint32_t val = *flash_loc; //FLASH->PCROP1SR;
   DBG_MSG("%x\n", val);

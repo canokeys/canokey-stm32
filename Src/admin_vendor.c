@@ -56,10 +56,17 @@ int admin_vendor_version(const CAPDU *capdu, RAPDU *rapdu) {
   return 0;
 }
 
-int admin_vendor_nfc_enable(const CAPDU *capdu, RAPDU *rapdu) {
+int admin_vendor_nfc_enable(const CAPDU *capdu, RAPDU *rapdu, bool pin_validated) {
   if (P1 != 0x00 && P1 != 0x01) EXCEPT(SW_WRONG_P1P2);
   if (P2 != 0x00) EXCEPT(SW_WRONG_P1P2);
   if (LC != 0x00) EXCEPT(SW_WRONG_LENGTH);
+
+  if (P1 == 0x01 && !pin_validated) EXCEPT(SW_SECURITY_STATUS_NOT_SATISFIED);
+  if (P1 == 0x00) {
+    RDATA[0] = check_is_nfc_en();
+    LL = 1;
+    return 0;
+  }
 
   uint32_t magic = P1 * 0x50 + 0x100;
   FLASH_OBProgramInitTypeDef cfg = {

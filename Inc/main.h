@@ -57,6 +57,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 extern const char *fw_git_version;
 void SystemClock_CustomConfig(bool nfc_low_power, bool pll_reconfig);
+int check_is_nfc_en(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

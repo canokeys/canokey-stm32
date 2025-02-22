@@ -14,7 +14,7 @@
 
 const uint32_t UNTOUCHED_MAX_VAL = 40; /* Suitable for 56K pull-down resistor */
 const uint32_t CALI_TIMES = 4;
-const uint32_t TOUCH_GAP_TIME = 800; /* Gap period (in ms) between two consecutive touch events */
+const uint32_t TOUCH_GAP_TIME = TOUCH_EXPIRE_TIME; /* Gap period (in ms) between two consecutive touch events */
 const uint32_t MIN_LONG_TOUCH_TIME = 500;
 const uint32_t MIN_TOUCH_TIME = 20;
 
@@ -153,7 +153,7 @@ void device_periodic_task(void) {
     }
     break;
   case TOUCH_STATE_ASSERT:
-    if (tick - event_tick > TOUCH_GAP_TIME) {
+    if (tick - event_tick >= TOUCH_GAP_TIME) {
       set_touch_result(TOUCH_NO);
       fsm = TOUCH_STATE_DEASSERT;
       DBG_MSG("touch deassert, max value measured: %u\r\n", measure_touch);

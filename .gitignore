@@ -1,4 +1,5 @@
 build/
 armbuild/
+build-arm/
 cmake-build-*/
 Inc/git-rev.h
