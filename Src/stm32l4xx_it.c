@@ -24,7 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "device-stm32.h"
-#include "tusb.h"
+extern PCD_HandleTypeDef hpcd;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -254,8 +254,7 @@ void TIM6_DAC_IRQHandler(void)
 void USB_IRQHandler(void)
 {
   /* USER CODE BEGIN USB_IRQn 0 */
-  tud_int_handler(0);
-  return;
+  HAL_PCD_IRQHandler(&hpcd);
   /* USER CODE END USB_IRQn 0 */
   /* USER CODE BEGIN USB_IRQn 1 */
 

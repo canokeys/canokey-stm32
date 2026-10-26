@@ -361,7 +361,7 @@ int main(void) {
         DBG_MSG("Touch calibrating...\n");
         GPIO_Touch_Calibrate();
       }
-      device_loop(1);
+      device_loop();
       ++i;
     }
   }
